@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<title>Nová karta</title>
+<style>
+  :root { --bg: #f3f3f5; --text: #1f2023; --muted: #6b6e76; --field: #fff; --line: #d2d4d9; --accent: #2563eb; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1f2023; --text: #e7e8ea; --muted: #9a9ca3; --field: #2a2b2f; --line: #3a3b40; --accent: #60a5fa; color-scheme: dark; } }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 15px "Segoe UI", system-ui, sans-serif; }
+  main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 0 16px; margin-top: -6vh; }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 34px; font-weight: 600; letter-spacing: -.02em; }
+  .brand svg { width: 44px; height: 44px; }
+  #clock { font-size: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  form { width: min(620px, 100%); }
+  input { width: 100%; box-sizing: border-box; height: 48px; border-radius: 24px; border: 1px solid var(--line); background: var(--field);
+    color: var(--text); padding: 0 22px; font: inherit; font-size: 16px; outline: 0; }
+  input:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">
+    <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#2563eb"/><circle cx="22" cy="28" r="9" fill="#fff"/><circle cx="42" cy="28" r="9" fill="#fff"/><circle cx="22" cy="28" r="4" fill="#1f2023"/><circle cx="42" cy="28" r="4" fill="#1f2023"/><path d="M28 40l4 6 4-6z" fill="#f59e0b"/></svg>
+    Sova
+  </div>
+  <div id="clock"></div>
+  <form id="f" method="get">
+    <input id="q" name="q" placeholder="Hľadať na webe" autocomplete="off">
+  </form>
+</main>
+<script>
+  const engines = { google: 'https://www.google.com/search', duckduckgo: 'https://duckduckgo.com/', bing: 'https://www.bing.com/search' };
+  const engine = new URLSearchParams(location.search).get('engine') || 'google';
+  document.getElementById('f').action = engines[engine] || engines.google;
+  const clock = document.getElementById('clock');
+  const tick = () => { clock.textContent = new Date().toLocaleString('sk-SK', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); };
+  tick(); setInterval(tick, 30000);
+</script>
+</body>
+</html>

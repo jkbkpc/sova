@@ -1,0 +1,45 @@
+/* Spoločný vzhľad interných stránok (sova://settings, sova://history) */
+:root {
+  --bg: #f3f3f5; --card: #ffffff; --text: #1f2023; --muted: #6b6e76; --line: #d2d4d9; --field: #ffffff;
+  --hover: #eef0f3; --sel: #e3ebfd; --accent: #2563eb; --danger: #b42318;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f2023; --card: #26272b; --text: #e7e8ea; --muted: #9a9ca3; --line: #3a3b40; --field: #1f2023;
+    --hover: #2f3035; --sel: #2d3a55; --accent: #60a5fa; --danger: #f97066;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 13px/1.4 "Segoe UI", system-ui, sans-serif; }
+svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+button { font: inherit; color: inherit; }
+.page { max-width: 720px; margin: 28px auto 60px; padding: 0 16px; }
+.page.wide { max-width: 940px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 8px 28px 20px; }
+h1 { font-size: 22px; font-weight: 600; margin: 4px 0 18px; display: flex; align-items: center; gap: 10px; }
+h1 svg { width: 24px; height: 24px; color: var(--accent); }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 22px 0 6px; font-weight: 600; }
+.row, .col { display: flex; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.row { align-items: center; justify-content: space-between; }
+.col { flex-direction: column; gap: 8px; }
+.row > span, .col > span { display: flex; flex-direction: column; gap: 2px; }
+small { color: var(--muted); font-size: 12px; }
+select, textarea, input[type=search], .btn {
+  font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+select:focus, textarea:focus, input[type=search]:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+textarea { width: 100%; resize: vertical; font-family: Consolas, monospace; font-size: 12px; }
+input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--accent); flex: none; margin: 0; }
+.btn { cursor: default; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:disabled { opacity: .5; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.danger { border-color: var(--danger); color: var(--danger); }
+.btn.danger.solid { background: var(--danger); color: #fff; }
+.icon { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; display: grid; place-items: center; flex: none; }
+.icon:hover { background: var(--hover); }
+.hint { color: var(--muted); font-size: 12px; margin-top: 18px; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg);
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }

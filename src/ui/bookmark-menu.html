@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+  :root { --card: #ffffff; --text: #1f2023; --muted: #6b6e76; --line: #d2d4d9; --hover: #eef0f3; --accent: #2563eb; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --card: #2a2b2f; --text: #e7e8ea; --muted: #9a9ca3; --line: #3a3b40; --hover: #34353a; --accent: #60a5fa; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; font: 13px/1.3 "Segoe UI", system-ui, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  .col { position: absolute; width: 270px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15); overflow-y: auto; }
+  .row { display: flex; align-items: center; gap: 10px; height: 30px; padding: 0 12px; cursor: default; }
+  .row:hover, .row.open { background: var(--hover); }
+  .row .ic { width: 16px; height: 16px; flex: none; display: grid; place-items: center; color: var(--muted); }
+  .row .ic img { width: 16px; height: 16px; }
+  .row .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .t.url { color: var(--muted); }
+  .row .arr { color: var(--muted); }
+  .row.disabled { color: var(--muted); font-style: italic; }
+  .row.disabled:hover { background: none; }
+  .sep { height: 1px; background: var(--line); margin: 4px 0; }
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .arr svg { width: 11px; height: 11px; }
+  .drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+  .drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+  .drop-into { outline: 1px solid var(--accent); outline-offset: -1px; background: var(--hover); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  const COLW = 270, PAD = 12;
+  const SVG = {
+    folder: '<svg viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.2c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg>',
+    globe: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>',
+    arrow: '<svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg>',
+    tabs: '<svg viewBox="0 0 16 16"><path d="M2.5 5.5h11v8h-11zM4.5 5.5v-2h9v8"/></svg>',
+  };
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const root = document.getElementById('root');
+  let data = null, maxH = 500, up = false, cols = [], hoverTimer = null, dragId = null;
+
+  function findNode(id, n = data) {
+    if (!n) return null;
+    if (n.id === id) return n;
+    for (const c of n.children || []) { const r = findNode(id, c); if (r) return r; }
+    return null;
+  }
+
+  window.bmm.onData((d, reset, mh, u) => {
+    data = d; maxH = mh; up = !!u;
+    // po zmene (napr. odstránenie) ostanú otvorené tie isté podmenu, ak ešte existujú
+    const keep = reset ? [] : cols.slice(1).map((c) => ({ id: c.folder.id, top: c.top, anchor: c.anchor }));
+    cols = [{ folder: data, top: 0 }];
+    for (const k of keep) { const f = findNode(k.id); if (!f) break; cols.push({ folder: f, top: k.top, anchor: k.anchor }); }
+    render();
+  });
+
+  function openSub(level, folder, top, anchorId) {
+    cols = cols.slice(0, level + 1);
+    if (folder) cols.push({ folder, top, anchor: anchorId });
+    render();
+  }
+
+  function render() {
+    root.innerHTML = '';
+    let w = 0, h = 0;
+    cols.forEach((c, level) => {
+      const col = document.createElement('div');
+      col.className = 'col';
+      col.style.left = level * (COLW - 4) + 'px';
+      col.style.maxHeight = Math.max(100, (up ? maxH - 4 : maxH - c.top - PAD)) + 'px';
+      const kids = c.folder.children || [];
+      if (!kids.length) col.innerHTML = '<div class="row disabled">(prázdny priečinok)</div>';
+      kids.forEach((n, i) => col.appendChild(rowEl(n, i, c.folder, level)));
+      const urls = kids.filter((n) => n.type === 'url').length;
+      if (urls > 1 && !c.folder.overflow) {
+        col.insertAdjacentHTML('beforeend', '<div class="sep"></div>');
+        const all = document.createElement('div');
+        all.className = 'row';
+        all.innerHTML = `<span class="ic">${SVG.tabs}</span><span class="t">Otvoriť všetky (${urls}) v nových kartách</span>`;
+        all.addEventListener('click', () => window.bmm.open(c.folder.id, 'new'));
+        all.addEventListener('mouseenter', () => { clearTimeout(hoverTimer); hoverTimer = setTimeout(() => openSub(level, null), 250); });
+        col.appendChild(all);
+      }
+      root.appendChild(col);
+      // smerom hore (lišta záložiek dole): hlavné menu prilepené k spodku, podmenu sa zmestia do okna
+      const hgt = col.offsetHeight;
+      if (up && level === 0) c.top = Math.max(0, maxH - hgt);
+      const limit = up ? maxH + 2 : maxH - PAD;
+      if (c.top + hgt > limit) c.top = Math.max(0, limit - hgt);
+      col.style.top = c.top + 'px';
+      w = Math.max(w, level * (COLW - 4) + COLW);
+      h = Math.max(h, c.top + col.offsetHeight);
+    });
+    window.bmm.size(w + PAD, h + PAD);
+  }
+
+  function rowEl(n, i, parent, level) {
+    const el = document.createElement('div');
+    el.className = 'row' + (cols[level + 1]?.anchor === n.id ? ' open' : '');
+    el.draggable = true;
+    const icon = n.type === 'folder' ? SVG.folder : n.favicon ? `<img src="${esc(n.favicon)}">` : SVG.globe;
+    const label = n.title || (n.type === 'url' ? n.url : 'Priečinok');
+    el.innerHTML = `<span class="ic">${icon}</span><span class="t${n.title ? '' : ' url'}">${esc(label)}</span>`
+      + (n.type === 'folder' ? `<span class="arr">${SVG.arrow}</span>` : '');
+    el.title = n.type === 'url' ? `${n.title ? n.title + '\n' : ''}${n.url}` : '';
+    const img = el.querySelector('img');
+    if (img) img.onerror = () => { el.querySelector('.ic').innerHTML = SVG.globe; };
+    el.addEventListener('mouseenter', () => {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => {
+        if (n.type === 'folder') { if (cols[level + 1]?.folder.id !== n.id) openSub(level, n, cols[level].top + el.offsetTop - 5, n.id); }
+        else if (cols.length > level + 1) openSub(level, null);
+      }, n.type === 'folder' ? 160 : 300);
+    });
+    el.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
+    el.addEventListener('mouseup', (e) => {
+      if (e.button === 0) {
+        if (n.type === 'folder') { clearTimeout(hoverTimer); openSub(level, n, cols[level].top + el.offsetTop - 5, n.id); return; }
+        window.bmm.open(n.id, e.ctrlKey ? 'background' : e.shiftKey ? 'new' : 'current');
+      }
+      if (e.button === 1 && n.type === 'url') window.bmm.open(n.id, 'background');
+    });
+    el.addEventListener('contextmenu', (e) => { e.preventDefault(); window.bmm.context(n.id); });
+    // ťahanie: v rámci menu (poradie, do priečinka) aj von na lištu záložiek
+    el.addEventListener('dragstart', (e) => {
+      dragId = n.id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/x-sova-bm', n.id);
+      e.dataTransfer.setData('text/plain', n.url || n.title);
+    });
+    el.addEventListener('dragend', () => { dragId = null; clearDrop(); });
+    el.addEventListener('dragover', (e) => {
+      const ext = e.dataTransfer.types.includes('application/x-sova-bm');   // ťahanie z lišty záložiek
+      if ((!dragId && !ext) || dragId === n.id) return;
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const y = (e.clientY - r.top) / r.height;
+      const mode = n.type === 'folder' && y > 0.25 && y < 0.75 ? 'into' : y < 0.5 ? 'before' : 'after';
+      clearDrop(); el.classList.add('drop-' + mode); el.dataset.drop = mode;
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drop-before', 'drop-after', 'drop-into'));
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const mode = el.dataset.drop;
+      clearDrop();
+      const id = dragId || e.dataTransfer.getData('application/x-sova-bm');
+      if (!id || id === n.id) return;
+      if (mode === 'into') window.bmm.move(id, n.id, -1);
+      else window.bmm.move(id, parent.id, (parent.offset || 0) + i + (mode === 'after' ? 1 : 0));
+      dragId = null;
+    });
+    return el;
+  }
+  function clearDrop() {
+    for (const x of document.querySelectorAll('.drop-before, .drop-after, .drop-into')) x.classList.remove('drop-before', 'drop-after', 'drop-into');
+  }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.bmm.close(); });
+  // klik do priehľadného okolia menu = zavrieť
+  document.addEventListener('mousedown', (e) => { if (e.target === document.body || e.target === root || e.target === document.documentElement) window.bmm.close(); });
+</script>
+</body>
+</html>

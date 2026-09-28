@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+  :root { --card: #ffffff; --text: #1f2023; --muted: #6b6e76; --line: #d2d4d9; --hover: #eef0f3; --sel: #e3ebfd; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --card: #2a2b2f; --text: #e7e8ea; --muted: #9a9ca3; --line: #3a3b40; --hover: #34353a; --sel: #2d3a55; color-scheme: dark; }
+  }
+  html, body { margin: 0; background: transparent; font: 13px/1.3 "Segoe UI", system-ui, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  #list { margin: 0 0 12px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0;
+    box-shadow: 0 4px 10px rgba(0,0,0,.12); }
+  .row { display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 14px; cursor: default; }
+  .row:hover { background: var(--hover); }
+  .row.sel { background: var(--sel); }
+  .ico { width: 16px; height: 16px; flex: none; display: grid; place-items: center; }
+  .ico img { width: 16px; height: 16px; }
+  .ico svg { width: 15px; height: 15px; fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linecap: round; }
+  .host { white-space: nowrap; }
+  .host b { font-weight: 600; }
+  .title { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .title::before { content: "– "; }
+  .title:empty { display: none; }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<script>
+  const list = document.getElementById('list');
+  const GLOBE = '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>';
+  const SEARCH = '<svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></svg>';
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let rows = [];
+  window.suggest.onItems((items, sel) => {
+    list.innerHTML = '';
+    rows = items.map((it, i) => {
+      const r = document.createElement('div');
+      r.className = 'row' + (i === sel ? ' sel' : '');
+      if (it.type === 'search') {
+        r.innerHTML = `<span class="ico">${SEARCH}</span><span class="host">${esc(it.text)}</span><span class="title">${esc(it.label)}</span>`;
+      } else {
+        const n = it.matchLen || 0;
+        r.innerHTML = `<span class="ico">${it.favicon ? `<img src="${esc(it.favicon)}">` : GLOBE}</span>
+          <span class="host"><b>${esc(it.host.slice(0, n))}</b>${esc(it.host.slice(n))}</span><span class="title">${esc(it.title)}</span>`;
+        const img = r.querySelector('img');
+        if (img) img.onerror = () => { r.querySelector('.ico').innerHTML = GLOBE; };
+      }
+      r.addEventListener('mousedown', (e) => { e.preventDefault(); window.suggest.pick(i); });
+      list.appendChild(r);
+      return r;
+    });
+  });
+  window.suggest.onSelect((i) => rows.forEach((r, j) => r.classList.toggle('sel', j === i)));
+</script>
+</body>
+</html>

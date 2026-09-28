@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src * data:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<title>História</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20stroke%3D%22%232563eb%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2.5%208a5.5%205.5%200%201%200%201.6-3.9M2.5%202.5v2.5H5M8%205v3l2%201.5%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="common.css">
+<style>
+  .tools { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 10px 0; display: flex; gap: 10px; align-items: center; }
+  #search { flex: 1; height: 36px; border-radius: 18px; padding: 0 16px; font-size: 14px; }
+  .range { display: flex; gap: 6px; align-items: center; }
+  .selbar { display: none; align-items: center; gap: 10px; padding: 8px 12px; margin-bottom: 10px; border-radius: 10px;
+    background: var(--sel); }
+  .selbar.show { display: flex; }
+  .selbar b { margin-right: auto; }
+  .day { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; margin: 18px 0 4px; padding: 0 10px; color: var(--muted); }
+  .hrow { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 6px 0 10px; border-radius: 8px; cursor: default; }
+  .hrow:hover { background: var(--hover); }
+  .hrow.checked { background: var(--sel); }
+  .htime { color: var(--muted); font-size: 12px; width: 38px; flex: none; font-variant-numeric: tabular-nums; }
+  .hfav { width: 16px; height: 16px; flex: none; display: grid; place-items: center; }
+  .hfav img { width: 16px; height: 16px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: .5; }
+  .htitle { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hhost { color: var(--muted); font-size: 12px; flex: 0 1 auto; max-width: 35%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hdel { visibility: hidden; }
+  .hdel svg { width: 12px; height: 12px; }
+  .hrow:hover .hdel { visibility: visible; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+</style>
+</head>
+<body>
+<main class="page wide">
+  <h1><svg viewBox="0 0 16 16"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v2.5H5M8 5v3l2 1.5"/></svg>História</h1>
+  <div class="tools">
+    <input id="search" type="search" placeholder="Hľadať v histórii" spellcheck="false" autocomplete="off" autofocus>
+    <div class="range">
+      <select id="range" title="Obdobie, ktoré sa vymaže">
+        <option value="3600000">Posledná hodina</option>
+        <option value="86400000">Posledný deň</option>
+        <option value="604800000">Posledný týždeň</option>
+        <option value="2592000000">Posledný mesiac</option>
+        <option value="0">Celá história</option>
+      </select>
+      <button id="clearrange" class="btn danger">Vymazať</button>
+    </div>
+  </div>
+  <div class="selbar" id="selbar">
+    <b id="selcount">Vybrané: 0</b>
+    <button id="selnone" class="btn">Zrušiť výber</button>
+    <button id="seldel" class="btn danger solid">Zmazať vybrané</button>
+  </div>
+  <div class="card" id="card">
+    <div id="list"></div>
+    <p id="more" class="hint"></p>
+  </div>
+  <p class="hint">Tip: Shift + kliknutie na zaškrtávacie pole označí celý rozsah. Kliknutím na záznam ho otvoríš v novej karte.</p>
+</main>
+<div class="toast" id="toast"></div>
+<script src="history.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+  :root { --card: #ffffff; --text: #1f2023; --muted: #6b6e76; --line: #d2d4d9; --hover: #eef0f3; --accent: #2563eb; --danger: #b42318; --ok: #15803d; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --card: #2a2b2f; --text: #e7e8ea; --muted: #9a9ca3; --line: #3a3b40; --hover: #34353a; --accent: #60a5fa; --danger: #f97066; --ok: #4ade80; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; font: 13px/1.3 "Segoe UI", system-ui, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  #card { margin: 0 6px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.16); }
+  .head { display: flex; align-items: center; justify-content: space-between; padding: 10px 10px 6px 16px; }
+  .head b { font-size: 14px; }
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .icon { width: 28px; height: 28px; border: 0; padding: 0; border-radius: 6px; background: transparent; color: var(--text); display: grid; place-items: center; }
+  .icon:hover { background: var(--hover); }
+  .item { display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 16px; }
+  .item.click:hover { background: var(--hover); }
+  .fi { width: 32px; height: 32px; flex: none; display: grid; place-items: center; }
+  .fi img { width: 32px; height: 32px; }
+  .fi svg { width: 26px; height: 26px; color: var(--muted); stroke-width: 1.3; }
+  .info { flex: 1; min-width: 0; }
+  .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item.bad .name { color: var(--muted); text-decoration: line-through; }
+  .st { color: var(--muted); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .st.err { color: var(--danger); }
+  .bar { height: 4px; border-radius: 2px; background: var(--line); margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .25s; }
+  .bar.unknown i { width: 30%; animation: slide 1.2s linear infinite; }
+  .bar.paused i { background: var(--muted); }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(330%); } }
+  .acts { display: flex; gap: 2px; flex: none; }
+  .empty { color: var(--muted); padding: 18px 16px 22px; text-align: center; }
+  .foot { border-top: 1px solid var(--line); }
+  .foot button { width: 100%; height: 38px; border: 0; background: transparent; color: var(--accent); font: inherit; border-radius: 0 0 12px 12px; }
+  .foot button:hover { background: var(--hover); }
+</style>
+</head>
+<body>
+<div id="card">
+  <div class="head"><b>Stiahnuté súbory</b>
+    <button class="icon" id="folder" title="Otvoriť priečinok Stiahnuté"><svg viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.2c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg></button>
+  </div>
+  <div id="list"></div>
+  <div class="foot"><button id="all">Zobraziť všetky sťahovania</button></div>
+</div>
+<script>
+  const B = window.bubble;
+  const $ = (s) => document.getElementById(s);
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const I = {
+    file: '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
+    pause: '<svg viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9"/></svg>',
+    play: '<svg viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></svg>',
+    x: '<svg viewBox="0 0 16 16"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
+    folder: '<svg viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.2c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg>',
+    retry: '<svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.5M13 2.5V5h-2.5"/></svg>',
+  };
+  const size = (b) => !b ? '0 B' : b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(0)} kB` : b < 1073741824 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${(b / 1073741824).toFixed(2).replace('.', ',')} GB`;
+  const dur = (s) => s < 60 ? `${Math.max(1, Math.round(s))} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1).replace('.', ',')} h`;
+  const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 60 ? 'práve teraz' : `pred ${dur(s)}`; };
+
+  function status(d) {
+    if (d.state === 'progressing') {
+      if (d.paused) return `Pozastavené · ${size(d.received)}${d.total ? ' z ' + size(d.total) : ''}`;
+      const left = d.total && d.speed > 0 ? ` · zostáva ${dur((d.total - d.received) / d.speed)}` : '';
+      return `${size(d.received)}${d.total ? ' z ' + size(d.total) : ''} · ${size(d.speed)}/s${left}`;
+    }
+    if (d.state === 'completed') return d.exists === false ? 'Súbor bol presunutý alebo odstránený' : `${size(d.received || d.total)} · ${ago(d.end)}`;
+    if (d.state === 'cancelled') return 'Zrušené';
+    return 'Prerušené – skús to znova';
+  }
+
+  function render(list) {
+    const box = $('list');
+    box.innerHTML = '';
+    if (!list.length) box.innerHTML = '<div class="empty">Zatiaľ si nič nestiahol.</div>';
+    for (const d of list) {
+      const el = document.createElement('div');
+      const ok = d.state === 'completed' && d.exists !== false;
+      el.className = 'item' + (ok ? ' click' : '') + (d.state === 'cancelled' || d.exists === false ? ' bad' : '');
+      el.title = `${d.filename}\n${d.url}`;
+      let acts = '';
+      if (d.state === 'progressing') {
+        acts = `<button class="icon" data-a="${d.paused ? 'resume' : 'pause'}" title="${d.paused ? 'Pokračovať' : 'Pozastaviť'}">${d.paused ? I.play : I.pause}</button>
+                <button class="icon" data-a="cancel" title="Zrušiť">${I.x}</button>`;
+      } else if (ok) {
+        acts = `<button class="icon" data-a="show" title="Zobraziť v priečinku">${I.folder}</button>`;
+      } else {
+        acts = `<button class="icon" data-a="retry" title="Stiahnuť znova">${I.retry}</button>
+                <button class="icon" data-a="remove" title="Odstrániť zo zoznamu">${I.x}</button>`;
+      }
+      const pct = d.total ? Math.min(100, (d.received / d.total) * 100) : 0;
+      const bar = d.state === 'progressing'
+        ? `<div class="bar${d.total ? '' : ' unknown'}${d.paused ? ' paused' : ''}"><i style="width:${d.total ? pct : 30}%"></i></div>` : '';
+      el.innerHTML = `<div class="fi">${d.icon ? `<img src="${d.icon}">` : I.file}</div>
+        <div class="info"><div class="name">${esc(d.filename)}</div><div class="st${d.state === 'interrupted' ? ' err' : ''}">${esc(status(d))}</div>${bar}</div>
+        <div class="acts">${acts}</div>`;
+      el.addEventListener('click', (e) => {
+        const a = e.target.closest('button')?.dataset.a;
+        if (a) { B.send(a, d.id); return; }
+        if (ok) { B.send('open', d.id); B.close(); }
+      });
+      box.appendChild(el);
+    }
+    requestAnimationFrame(() => B.size($('card').getBoundingClientRect().height + 12));
+  }
+
+  B.on('list', render);
+  B.on('shown', () => B.send('ready'));
+  $('folder').addEventListener('click', () => B.send('folder'));
+  $('all').addEventListener('click', () => B.send('all'));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') B.close(); });
+</script>
+</body>
+</html>

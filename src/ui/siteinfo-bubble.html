@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+  :root { --card: #ffffff; --text: #1f2023; --muted: #6b6e76; --line: #d2d4d9; --hover: #eef0f3; --accent: #2563eb; --ok: #15803d; --warn: #b42318; --field: #fff; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --card: #2a2b2f; --text: #e7e8ea; --muted: #9a9ca3; --line: #3a3b40; --hover: #34353a; --accent: #60a5fa; --ok: #4ade80; --warn: #f97066; --field: #1f2023; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; font: 13px/1.35 "Segoe UI", system-ui, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  #card { margin: 0 6px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.16); overflow: hidden; }
+  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .head { padding: 14px 16px 10px; }
+  .host { font-size: 15px; font-weight: 600; word-break: break-all; }
+  .sec { display: flex; gap: 10px; align-items: flex-start; padding: 10px 16px; }
+  .sec.ok svg { color: var(--ok); } .sec.bad svg, .sec.bad b { color: var(--warn); }
+  .sec small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .sep { height: 1px; background: var(--line); }
+  .row { display: flex; align-items: center; gap: 12px; padding: 9px 16px; }
+  .row.click:hover { background: var(--hover); }
+  .row .txt { flex: 1; min-width: 0; }
+  .row small { display: block; color: var(--muted); font-size: 12px; }
+  .row > svg { color: var(--muted); }
+  .cert { padding: 4px 16px 10px 44px; font-size: 12px; color: var(--muted); display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; }
+  .cert b { color: var(--text); font-weight: 500; word-break: break-all; }
+  button.link { border: 0; background: none; color: var(--accent); font: inherit; padding: 0; cursor: default; }
+  button.link:hover { text-decoration: underline; }
+  .sw { position: relative; width: 34px; height: 20px; flex: none; }
+  .sw input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .sw span { position: absolute; inset: 0; border-radius: 10px; background: var(--line); transition: .15s; }
+  .sw span::after { content: ""; position: absolute; left: 3px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: .15s; }
+  .sw input:checked + span { background: var(--accent); }
+  .sw input:checked + span::after { left: 17px; }
+  select { font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; }
+  .note { padding: 6px 16px 12px; color: var(--muted); font-size: 12px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="card"><div id="body"></div></div>
+<script>
+  const B = window.bubble;
+  const $ = (s) => document.getElementById(s);
+  const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const I = {
+    lock: '<svg viewBox="0 0 20 20"><rect x="4.5" y="8.5" width="11" height="8" rx="1.5"/><path d="M7 8.5V6.5a3 3 0 0 1 6 0v2"/></svg>',
+    warn: '<svg viewBox="0 0 20 20"><path d="M10 3 2.5 16.5h15z"/><path d="M10 8.5v3.5M10 14.3v.1"/></svg>',
+    info: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="M10 9v4.5M10 6.5v.1"/></svg>',
+    cert: '<svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="14" height="10" rx="1.5"/><path d="M6 7h8M6 10h4"/><path d="m12.5 13.5-1 3.5 2-1 2 1-1-3.5"/></svg>',
+    cookie: '<svg viewBox="0 0 20 20"><path d="M10 3a7 7 0 1 0 7 7 3 3 0 0 1-3.5-3A3 3 0 0 1 10 3z"/><path d="M7 9v.1M9 13v.1M12.5 12v.1"/></svg>',
+    shield: '<svg viewBox="0 0 20 20"><path d="M10 2.5 4 4.8v4.6c0 3.6 2.6 6.6 6 7.8 3.4-1.2 6-4.2 6-7.8V4.8z"/></svg>',
+    moon: '<svg viewBox="0 0 20 20"><path d="M16 12A6.5 6.5 0 1 1 8 4a5.5 5.5 0 0 0 8 8z"/></svg>',
+    key: '<svg viewBox="0 0 20 20"><circle cx="7" cy="10" r="3"/><path d="M10 10h7M14.5 10v3M17 10v2"/></svg>',
+  };
+  const date = (t) => new Date(t).toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric', year: 'numeric' });
+  const days = (t) => Math.round((t - Date.now()) / 86400000);
+  const sw = (id, on) => `<label class="sw"><input type="checkbox" id="${id}" ${on ? 'checked' : ''}><span></span></label>`;
+
+  function render(d) {
+    let h = '';
+    const SEC = {
+      secure: ['ok', I.lock, 'Pripojenie je zabezpečené', 'Údaje, ktoré posielaš (heslá, karty), sú šifrované a certifikát stránky je platný.'],
+      'cert-error': ['bad', I.warn, 'Neplatný certifikát', 'Certifikát nie je dôveryhodný a pokračoval si napriek varovaniu. Nezadávaj sem citlivé údaje, ak nejde o tvoje zariadenie.'],
+      insecure: ['bad', I.info, 'Pripojenie nie je zabezpečené', 'Stránka nepoužíva HTTPS. Čokoľvek sem zadáš, môže niekto po ceste prečítať.'],
+      internal: ['ok', I.info, 'Stránka prehliadača Sova', 'Interná stránka – nič sa neposiela na internet.'],
+      file: ['ok', I.info, 'Súbor v tomto počítači', 'Stránka je načítaná z tvojho disku.'],
+      none: ['ok', I.info, 'Nová karta', ''],
+    }[d.security] || [];
+    if (d.host) h += `<div class="head"><div class="host">${esc(d.host)}</div></div><div class="sep"></div>`;
+    h += `<div class="sec ${SEC[0]}">${SEC[1]}<div><b>${SEC[2]}</b><small>${SEC[3]}</small></div></div>`;
+    if (d.security === 'cert-error') h += `<div class="note"><button class="link" id="forget">Znova sa pýtať na tento certifikát</button></div>`;
+
+    if (d.host) {
+      if (d.cert) {
+        const left = days(d.cert.validTo);
+        h += `<div class="sep"></div><div class="row click" id="viewcert">${I.cert}<div class="txt">Certifikát je ${d.security === 'secure' ? 'platný' : 'neplatný'}<small>Vydal: ${esc(d.cert.issuer)}${d.cert.issuerOrg ? ' (' + esc(d.cert.issuerOrg) + ')' : ''}</small></div></div>
+          <div class="cert">
+            <span>Pre</span><b>${esc(d.cert.subject)}${d.cert.org ? ' – ' + esc(d.cert.org) : ''}</b>
+            <span>Platí</span><b>${date(d.cert.validFrom)} – ${date(d.cert.validTo)}${left < 0 ? ' (vypršal)' : left < 30 ? ` (vyprší o ${left} dní)` : ''}</b>
+            <span>Cesta</span><b>${d.cert.chain.map(esc).join(' › ')}</b>
+            <span></span><span><button class="link" id="viewcert2">Zobraziť certifikát vo Windows</button></span>
+          </div>`;
+      } else if (d.security === 'secure') {
+        h += `<div class="sep"></div><div class="note">Údaje o certifikáte sa načítajú po obnovení stránky (F5).</div>`;
+      }
+      h += `<div class="sep"></div>
+        <div class="row">${I.cookie}<div class="txt">Cookies a údaje stránky<small>${d.cookies} cookies tejto stránky${d.siteCookies > d.cookies ? ` · ${d.siteCookies} celej domény ${esc(d.domain)}` : ''}</small></div>
+          <button class="link" id="clear">Vymazať</button></div>`;
+      if (d.perms.length) {
+        h += `<div class="sep"></div>`;
+        for (const p of d.perms) {
+          h += `<div class="row">${I.key}<div class="txt">${esc(p.label)}</div>
+            <select data-perm="${esc(p.perm)}"><option value="allow">Povolené</option><option value="block">Zakázané</option><option value="ask">Pýtať sa</option></select></div>`;
+        }
+      }
+      h += `<div class="sep"></div>
+        <div class="row">${I.shield}<div class="txt">Blokovať reklamy na tejto stránke<small>${!d.adblock ? 'Blokovanie je vypnuté v nastaveniach' : d.allowlisted ? 'Vypnuté pre túto stránku' : `Zablokované: ${d.blocked}`}</small></div>${d.adblock ? sw('ab', !d.allowlisted) : ''}</div>
+        <div class="row">${I.moon}<div class="txt">Uspávať, keď je na pozadí<small>${d.neverSleep ? 'Táto stránka beží stále (napr. pre upozornenia)' : 'Šetrí CPU a RAM, keď kartu nepoužívaš'}</small></div>${sw('sl', !d.neverSleep)}</div>
+        <div class="sep"></div>
+        <div class="note"><button class="link" id="settings">Nastavenia prehliadača</button></div>`;
+    }
+    $('body').innerHTML = h;
+    for (const s of document.querySelectorAll('select[data-perm]')) {
+      s.value = d.perms.find((p) => p.perm === s.dataset.perm).state;
+      s.addEventListener('change', () => B.send('perm', s.dataset.perm, s.value));
+    }
+    const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+    on('viewcert', 'click', () => B.send('viewcert'));
+    on('viewcert2', 'click', (e) => { e.stopPropagation(); B.send('viewcert'); });
+    on('clear', 'click', () => B.send('clear-site'));
+    on('ab', 'change', () => B.send('toggle-adblock'));
+    on('sl', 'change', () => B.send('toggle-sleep'));
+    on('forget', 'click', () => B.send('forget-cert'));
+    on('settings', 'click', () => B.send('settings'));
+    requestAnimationFrame(() => B.size($('card').getBoundingClientRect().height + 12));
+  }
+  B.on('data', render);
+  B.on('shown', () => B.send('ready'));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') B.close(); });
+</script>
+</body>
+</html>

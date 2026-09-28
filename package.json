@@ -1,0 +1,56 @@
+{
+  "name": "sova",
+  "version": "1.0.0",
+  "description": "Ľahký prehliadač s uspávaním kariet a blokovaním reklám",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build-adblock": "node scripts/build-adblock.js",
+    "dist": "npm run build-adblock && electron-builder --win portable nsis"
+  },
+  "author": "Jakub",
+  "license": "MIT",
+  "dependencies": {
+    "@ghostery/adblocker": "^2.18.2",
+    "@ghostery/adblocker-electron": "^2.18.2",
+    "tldts-experimental": "^7.4.16"
+  },
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
+  },
+  "productName": "Sova",
+  "build": {
+    "appId": "sk.lunys.sova",
+    "productName": "Sova",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/",
+        "to": ".",
+        "filter": [
+          "adblock-*.bin"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "artifactName": "Sova-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "Sova-Portable-${version}.${ext}"
+    }
+  }
+}
