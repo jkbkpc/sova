@@ -37,7 +37,7 @@ button { font: inherit; color: inherit; }
 .tab + .tab:not(.active)::before { content: ""; position: absolute; left: -1px; top: 9px; bottom: 9px; width: 1px; background: var(--line); }
 .tab.active + .tab::before, .tab:hover + .tab::before { display: none; }
 .tab .fav { width: 16px; height: 16px; flex: none; display: grid; place-items: center; }
-.tab .fav img { width: 16px; height: 16px; }
+.tab .fav img { width: 16px; height: 16px; -webkit-user-drag: none; pointer-events: none; }
 .tab .fav .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: .5; }
 .tab .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); }

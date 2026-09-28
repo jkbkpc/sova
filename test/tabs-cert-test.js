@@ -112,6 +112,20 @@ app.whenReady().then(async () => {
     await sleep(500);
   }
   check('ťahanie po prepnutí fokusu na stránku', ids()[1] === o2[3], `${o2} → ${ids()}`);
+  // dve pripnuté: podržať na ikone, chvíľu počkať a až potom pomaly ťahať
+  tabs.togglePin(tabs.tabs[1].id);
+  await sleep(600);
+  const p3 = ids();
+  const pr = JSON.parse(await ev(`(() => { const e = document.querySelector('#tabs .tab.pinned .fav').getBoundingClientRect(); return JSON.stringify({x: e.left + e.width/2, y: e.top + e.height/2}); })()`));
+  {
+    const x = Math.round(pr.x), y = Math.round(pr.y);
+    ui.sendInputEvent({ type: 'mouseDown', x, y, button: 'left', clickCount: 1 });
+    await sleep(700);
+    for (let i = 1; i <= 20; i++) { ui.sendInputEvent({ type: 'mouseMove', x: x + i * 3, y, button: 'left', modifiers: ['leftButtonDown'] }); await sleep(40); }
+    ui.sendInputEvent({ type: 'mouseUp', x: x + 60, y, button: 'left', clickCount: 1 });
+    await sleep(600);
+  }
+  check('pripnutá: podržať na ikone a potom ťahať', ids()[1] === p3[0] && ids()[0] === p3[1], `${p3} → ${ids()}`);
   await shot('shot-tabs-drag.png');
   console.log(fails ? `\n${fails} FAIL` : '\nVŠETKO OK');
   app.exit(fails ? 1 : 0);

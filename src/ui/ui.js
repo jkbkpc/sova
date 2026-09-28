@@ -31,6 +31,8 @@ function makeTab(t) {
     if (e.button === 1) { e.preventDefault(); api.send('tab:close', t.id); }
   });
   el.addEventListener('pointerdown', (e) => { if (e.button === 0 && !e.target.closest('button')) dragStart(e, t.id, el); });
+  // natívne ťahanie ikony (obrázka) by prerušilo presúvanie karty – hlavne pri pripnutých, ktoré sú len ikona
+  el.addEventListener('dragstart', (e) => e.preventDefault());
   el.addEventListener('contextmenu', (e) => { e.preventDefault(); api.send('tab:menu', t.id); });
   el.querySelector('.close').addEventListener('click', () => api.send('tab:close', t.id));
   el.querySelector('.audio').addEventListener('click', () => api.send('tab:mute', t.id));
@@ -127,7 +129,7 @@ function renderTabs() {
       const f = el.querySelector('.fav');
       f.innerHTML = '';
       if (fav) {
-        const img = new Image(); img.src = fav; img.onerror = () => { f.innerHTML = '<span class="dot"></span>'; };
+        const img = new Image(); img.draggable = false; img.src = fav; img.onerror = () => { f.innerHTML = '<span class="dot"></span>'; };
         f.appendChild(img);
       } else f.innerHTML = '<span class="dot"></span>';
     }

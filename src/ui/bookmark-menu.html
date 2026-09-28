@@ -37,7 +37,6 @@
     folder: '<svg viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.2c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg>',
     globe: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>',
     arrow: '<svg viewBox="0 0 16 16"><path d="m6 3 5 5-5 5"/></svg>',
-    tabs: '<svg viewBox="0 0 16 16"><path d="M2.5 5.5h11v8h-11zM4.5 5.5v-2h9v8"/></svg>',
   };
   const esc = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const root = document.getElementById('root');
@@ -76,16 +75,6 @@
       const kids = c.folder.children || [];
       if (!kids.length) col.innerHTML = '<div class="row disabled">(prázdny priečinok)</div>';
       kids.forEach((n, i) => col.appendChild(rowEl(n, i, c.folder, level)));
-      const urls = kids.filter((n) => n.type === 'url').length;
-      if (urls > 1 && !c.folder.overflow) {
-        col.insertAdjacentHTML('beforeend', '<div class="sep"></div>');
-        const all = document.createElement('div');
-        all.className = 'row';
-        all.innerHTML = `<span class="ic">${SVG.tabs}</span><span class="t">Otvoriť všetky (${urls}) v nových kartách</span>`;
-        all.addEventListener('click', () => window.bmm.open(c.folder.id, 'new'));
-        all.addEventListener('mouseenter', () => { clearTimeout(hoverTimer); hoverTimer = setTimeout(() => openSub(level, null), 250); });
-        col.appendChild(all);
-      }
       root.appendChild(col);
       // smerom hore (lišta záložiek dole): hlavné menu prilepené k spodku, podmenu sa zmestia do okna
       const hgt = col.offsetHeight;

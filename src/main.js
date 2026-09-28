@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { app, BrowserWindow, ipcMain, session, dialog, Menu, nativeTheme, protocol } = require('electron');
 const { Settings } = require('./settings');
+const { loadWindowState, trackWindowState } = require('./windowstate');
 const { AdBlock } = require('./adblock');
 const { TabManager } = require('./tabs');
 const { History } = require('./history');
@@ -169,8 +170,9 @@ app.whenReady().then(async () => {
   browsing.protocol.handle('sova', serveInternal);
   setupPermissions(browsing);
 
+  const ws = loadWindowState(app.getPath('userData'));
   win = new BrowserWindow({
-    width: 1280, height: 820, minWidth: 480, minHeight: 300,
+    ...ws.bounds, minWidth: 480, minHeight: 300,
     title: 'Sova', backgroundColor: nativeTheme.shouldUseDarkColors ? '#1f2023' : '#f3f3f5',
     icon: path.join(__dirname, 'ui', 'icon.png'),
     show: false,
@@ -190,7 +192,11 @@ app.whenReady().then(async () => {
     a.addressFocusUntil = Date.now() + 3000;
     focusAddress();
   };
-  win.once('ready-to-show', () => { win.show(); shown = true; startupFocus(); });
+  trackWindowState(win, ws.file);
+  win.once('ready-to-show', () => {
+    if (ws.maximized) win.maximize();
+    win.show(); shown = true; startupFocus();
+  });
   nativeTheme.on('updated', () => { if (!win.isDestroyed()) win.setTitleBarOverlay(overlayColors()); });
   settings.on('change', (k) => { if (k === 'tabsPosition' && !win.isDestroyed()) win.setTitleBarOverlay(overlayColors()); });
 

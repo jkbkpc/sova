@@ -7,10 +7,6 @@ const { BookmarkMenu } = require('./bmmenu');
 const { fetchIcon, discoverIcon, hostKey } = require('./favicons');
 
 function setupBookmarks({ win, tabs, bookmarks, history, settings, popover, pushState }) {
-  const menuLabel = (s, max = 60) => {
-    const t = String(s || '').replace(/&/g, '&&');
-    return t.length > max ? t.slice(0, max - 1) + '…' : t;
-  };
   const favicon = (url) => {
     try {
       const u = new URL(url);
@@ -29,23 +25,12 @@ function setupBookmarks({ win, tabs, bookmarks, history, settings, popover, push
     if (how === 'current' && tabs.active) tabs.navigate(url);
     else tabs.create(url, { background: how === 'background', afterActive: true });
   }
-  const howFromEvent = (ev) => (ev && (ev.ctrlKey || ev.metaKey) ? 'background' : ev && ev.shiftKey ? 'new' : 'current');
   function openAll(folder) {
     const urls = [];
     bookmarks.walk((n) => { if (n.type === 'url') urls.push(n.url); }, folder);
     urls.slice(0, 50).forEach((u, i) => tabs.create(u, { background: i > 0, afterActive: true }));
   }
 
-  // --------------------------------------------------------- menu priečinka
-  function folderMenu(folder) {
-    const items = (folder.children || []).map((c) => (c.type === 'folder'
-      ? { label: menuLabel(c.title), submenu: folderMenu(c) }
-      : { label: menuLabel(c.title || c.url), click: (_m, _w, ev) => open(c.url, howFromEvent(ev)) }));
-    if (!items.length) items.push({ label: '(prázdny priečinok)', enabled: false });
-    const n = (folder.children || []).filter((c) => c.type === 'url').length;
-    if (n > 1) items.push({ type: 'separator' }, { label: `Otvoriť všetky (${n}) v nových kartách`, click: () => openAll(folder) });
-    return items;
-  }
   const popupAt = (template, rect) => Menu.buildFromTemplate(template).popup(rect
     ? { window: win, x: Math.round(rect.x), y: Math.round(rect.y + rect.height) } : { window: win });
   // rozbaľovacie menu priečinkov s ikonami, pravým tlačidlom a ťahaním
