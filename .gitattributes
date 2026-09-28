@@ -1,0 +1,4 @@
+# Všetky textové súbory ukladať s LF (odstráni varovania „LF will be replaced by CRLF“)
+* text=auto eol=lf
+*.png binary
+*.ico binary
