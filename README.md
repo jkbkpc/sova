@@ -37,6 +37,8 @@ Hviezdička v adresnom riadku alebo Ctrl+D pridá stránku na lištu záložiek 
 Lišta záložiek je pod adresným riadkom (Ctrl+Shift+B ju skryje), priečinky sa otvárajú ako menu, poradie sa mení ťahaním.
 Správca záložiek `sova://bookmarks` (Ctrl+Shift+O): priečinky, hľadanie, úpravy, presúvanie, odstránenie so „Späť“,
 import z Chrome / Brave / Edge / Vivaldi / Opery (priamo z profilu na tomto PC) alebo zo súboru HTML a export do HTML.
+Ikony stránok sa ukladajú priamo do záložiek: pri importe z Chrome/Brave/Edge sa prevezmú z profilu prehliadača,
+chýbajúce sa doplnia na pozadí a po návšteve stránky sa aktualizujú.
 Uložené v `%APPDATA%\Sova\bookmarks.json`.
 
 ## Vyťaženie, test rýchlosti a sťahovanie
@@ -56,4 +58,4 @@ npm run dist              # Windows build (portable .exe) do priečinka dist/
 ```
 
 Kód: `src/main.js` (okno, skratky, oprávnenia), `src/tabs.js` (karty, zmrazovanie, uspávanie),
-`src/adblock.js` (blokovanie), `src/history.js` (história, návrhy), `src/bookmarks.js` + `src/bookmarks-ui.js` + `src/bmpopover.js` (záložky), `src/suggest.js` (zoznam návrhov), `src/downloads.js` + `src/tools-ui.js` + `src/netstats.js` + `src/speedtest.js` (sťahovanie, vyťaženie, test rýchlosti), `src/bubble.js` (bubliny v lište), `src/ui/` (rozhranie), `src/ui/pages/` (interné stránky sova://). Nastavenia a relácia sú v `%APPDATA%\Sova`.
+`src/adblock.js` (blokovanie), `src/history.js` (história, návrhy), `src/bookmarks.js` + `src/bookmarks-ui.js` + `src/favicons.js` + `src/bmpopover.js` (záložky), `src/suggest.js` (zoznam návrhov), `src/downloads.js` + `src/tools-ui.js` + `src/netstats.js` + `src/speedtest.js` (sťahovanie, vyťaženie, test rýchlosti), `src/bubble.js` (bubliny v lište), `src/ui/` (rozhranie), `src/ui/pages/` (interné stránky sova://). Nastavenia a relácia sú v `%APPDATA%\Sova`.

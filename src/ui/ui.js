@@ -30,12 +30,75 @@ function makeTab(t) {
     if (e.button === 0 && !e.target.closest('button')) api.send('tab:activate', t.id);
     if (e.button === 1) { e.preventDefault(); api.send('tab:close', t.id); }
   });
+  el.addEventListener('pointerdown', (e) => { if (e.button === 0 && !e.target.closest('button')) dragStart(e, t.id, el); });
   el.addEventListener('contextmenu', (e) => { e.preventDefault(); api.send('tab:menu', t.id); });
   el.querySelector('.close').addEventListener('click', () => api.send('tab:close', t.id));
   el.querySelector('.audio').addEventListener('click', () => api.send('tab:mute', t.id));
   el._fav = '';
   return el;
 }
+
+// ---------------------------------------------------------- presúvanie kariet ťahaním
+// Karta ide za myšou, ostatné sa odsúvajú (ako v Chrome). Pripnuté sa presúvajú len medzi pripnutými.
+let drag = null;
+function dragStart(e, id, el) {
+  const t = state.tabs.find((x) => x.id === id);
+  if (!t) return;
+  const group = state.tabs.filter((x) => !!x.pinned === !!t.pinned).map((x) => tabEls.get(x.id)).filter(Boolean);
+  drag = { id, el, pinned: !!t.pinned, x0: e.clientX, y0: e.clientY, active: false, group,
+    rects: group.map((g) => g.getBoundingClientRect()), from: group.indexOf(el), to: group.indexOf(el), pointer: e.pointerId };
+}
+function dragMove(e) {
+  if (!drag) return;
+  const dx = e.clientX - drag.x0;
+  if (!drag.active) {
+    if (Math.abs(dx) < 5 && Math.abs(e.clientY - drag.y0) < 5) return;
+    if (drag.group.length < 2) { drag = null; return; }
+    drag.active = true;
+    try { drag.el.setPointerCapture(drag.pointer); } catch {}
+    drag.el.classList.add('drag');
+    $('#tabs').classList.add('dragging');
+  }
+  const r = drag.rects, from = drag.from;
+  // karta sa nedá vytiahnuť mimo svojej skupiny
+  const min = r[0].left - r[from].left, max = r[r.length - 1].right - r[from].right;
+  const d = Math.max(min, Math.min(max, dx));
+  drag.el.style.transform = `translateX(${d}px)`;
+  // karta si vymení miesto so susedom, keď jej okraj prejde cez jeho stred
+  let to = from;
+  r.forEach((q, i) => {
+    const mid = q.left + q.width / 2;
+    if (i > from && r[from].right + d > mid) to++;
+    if (i < from && r[from].left + d < mid) to--;
+  });
+  drag.to = to;
+  const shift = r[from].width + 1;
+  drag.group.forEach((g, i) => {
+    if (i === from) return;
+    const off = from < to && i > from && i <= to ? -shift : from > to && i >= to && i < from ? shift : 0;
+    g.style.transform = off ? `translateX(${off}px)` : '';
+  });
+}
+function dragEnd(cancel) {
+  if (!drag) return;
+  const d = drag;
+  drag = null;
+  if (!d.active) return;
+  for (const g of d.group) g.style.transform = '';
+  d.el.classList.remove('drag');
+  $('#tabs').classList.remove('dragging');
+  if (cancel !== true && d.to !== d.from) {
+    const pinned = state.tabs.filter((x) => x.pinned).length;
+    const index = d.pinned ? d.to : pinned + d.to;
+    // poradie zmeníme hneď (bez preblikutia), hlavný proces ho potvrdí
+    const i = state.tabs.findIndex((x) => x.id === d.id);
+    if (i >= 0) { const [t] = state.tabs.splice(i, 1); state.tabs.splice(index, 0, t); renderTabs(); }
+    api.send('tab:move', d.id, index);
+  }
+}
+document.addEventListener('pointermove', dragMove);
+document.addEventListener('pointerup', dragEnd);
+document.addEventListener('pointercancel', () => dragEnd(true));
 
 function renderTabs() {
   const box = $('#tabs');
@@ -56,7 +119,7 @@ function renderTabs() {
     el.className = ['tab', t.state, t.id === state.activeId && 'active', t.loading && 'loading',
       t.audible && 'audible', t.muted && 'muted', t.pinned && 'pinned',
       !t.pinned && narrow && 'narrow', !t.pinned && compact && 'compact',
-      t.pinned && !state.tabs[i + 1]?.pinned && 'last-pinned'].filter(Boolean).join(' ');
+      t.pinned && !state.tabs[i + 1]?.pinned && 'last-pinned', drag?.active && drag.id === t.id && 'drag'].filter(Boolean).join(' ');
     el.querySelector('.title').textContent = t.title || 'Nová karta';
     const fav = t.favicon || '';
     if (el._fav !== fav) {
@@ -78,6 +141,7 @@ function renderTabs() {
     el.title = lines.filter(Boolean).join('\n');
   });
   for (const [id, el] of tabEls) if (!seen.has(id)) { el.remove(); tabEls.delete(id); }
+  if (drag && drag.group.some((g) => !g.isConnected)) dragEnd(true);   // počas ťahania sa zavrela karta
   // šírku kariet počítame sami (Chrome štýl); pri extrémnom počte sa lišta dá posúvať kolieskom
   const w = Math.max(28, Math.floor(tabW));
   state.tabs.forEach((t) => { const el = tabEls.get(t.id); if (el) el.style.width = (t.pinned ? PIN_W : w) + 'px'; });
@@ -108,8 +172,43 @@ function renderToolbar() {
 
 api.on('state', (s) => {
   state = s; applyLayout(s.tabsPosition || 'top');
-  renderTabs(); renderToolbar(); renderBookmarks(); renderDownloads(); renderNtp();
+  renderTabs(); renderToolbar(); renderBookmarks(); renderDownloads(); renderNtp(); renderCert();
 });
+
+// ------------------------------------------------------------ neplatný certifikát
+const CERT_REASON = {
+  'net::ERR_CERT_AUTHORITY_INVALID': 'Certifikát nevydala dôveryhodná certifikačná autorita – napríklad je vlastnoručne podpísaný.',
+  'net::ERR_CERT_DATE_INVALID': 'Platnosť certifikátu vypršala alebo ešte nezačala. Skontroluj aj dátum a čas v počítači.',
+  'net::ERR_CERT_COMMON_NAME_INVALID': 'Certifikát patrí inej adrese, než ktorú otváraš.',
+  'net::ERR_CERT_REVOKED': 'Vydavateľ tento certifikát zrušil.',
+  'net::ERR_CERT_WEAK_SIGNATURE_ALGORITHM': 'Certifikát používa zastaraný a slabý podpis.',
+  'net::ERR_CERT_WEAK_KEY': 'Certifikát používa príliš slabý kľúč.',
+  'net::ERR_CERT_INVALID': 'Certifikát je poškodený alebo neplatný.',
+};
+let certShown = '';
+function renderCert() {
+  const c = state.certError;
+  const el = $('#certerr');
+  const key = c ? `${state.activeId}|${c.host}|${c.error}` : '';
+  if (key === certShown) return;
+  certShown = key;
+  el.hidden = !c;
+  if (!c) return;
+  $('#cehost').textContent = $('#cehost2').textContent = $('#cehost3').textContent = c.host;
+  $('#cereason').textContent = CERT_REASON[c.error] || 'Certifikát servera nie je platný.';
+  $('#cecode').textContent = c.error;
+  $('#cedetail').hidden = true;
+  $('#ceadv').textContent = 'Rozšírené';
+  el.scrollTop = 0;
+}
+$('#ceadv').addEventListener('click', () => {
+  const d = $('#cedetail');
+  d.hidden = !d.hidden;
+  $('#ceadv').textContent = d.hidden ? 'Rozšírené' : 'Skryť podrobnosti';
+  if (!d.hidden) d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
+$('#ceback').addEventListener('click', () => api.send('cert:back'));
+$('#ceproceed').addEventListener('click', (e) => { e.preventDefault(); api.send('cert:proceed'); });
 
 // ------------------------------------------------------------ prázdna nová karta
 let ntpTimer = null;

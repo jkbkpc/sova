@@ -69,6 +69,26 @@
     <form id="ntpform"><input id="ntpq" placeholder="Hľadať na webe" autocomplete="off" spellcheck="false"></form>
   </div>
 </section>
+<!-- neplatný certifikát – upozornenie namiesto stránky -->
+<section id="certerr" hidden>
+  <div class="ce-inner">
+    <svg class="ce-icon" viewBox="0 0 48 48"><path d="M24 4 7 10v12c0 11 7.3 19.4 17 22 9.7-2.6 17-11 17-22V10z" fill="#dc2626"/><path d="M24 14v13" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="24" cy="34" r="2.6" fill="#fff"/></svg>
+    <h1>Toto pripojenie nie je súkromné</h1>
+    <p>Útočníci sa môžu pokúšať ukradnúť tvoje údaje zo servera <b id="cehost"></b> (napríklad heslá, správy alebo údaje o platobných kartách).</p>
+    <p class="ce-reason" id="cereason"></p>
+    <code id="cecode"></code>
+    <div class="ce-actions">
+      <button id="ceadv" class="ce-btn ce-sec">Rozšírené</button>
+      <button id="ceback" class="ce-btn ce-pri">Späť do bezpečia</button>
+    </div>
+    <div id="cedetail" hidden>
+      <p>Server nevedel preukázať, že je naozaj <b id="cehost2"></b>. Môže to byť chybné nastavenie, vlastnoručne podpísaný certifikát
+        tvojho zariadenia (router, firewall, NAS, tlačiareň) alebo niekto zachytáva tvoje pripojenie.</p>
+      <p>Pokračuj len vtedy, ak vieš, že ide o tvoje zariadenie. Výnimka platí, kým Sovu nezatvoríš.</p>
+      <a href="#" id="ceproceed">Pokračovať na <span id="cehost3"></span> (nebezpečné)</a>
+    </div>
+  </div>
+</section>
 <!-- pri kartách dole sem presunieme lištu kariet a záložiek -->
 <footer id="bottombar"></footer>
 <script src="ui.js"></script>

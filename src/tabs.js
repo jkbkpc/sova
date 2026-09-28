@@ -122,12 +122,16 @@ class TabManager {
     wc.on('page-favicon-updated', (_e, icons) => {
       tab.favicon = icons[0] || null;
       this.history?.setFavicon(wc.getURL(), tab.favicon);
+      if (tab.favicon) this.onFavicon?.({ url: wc.getURL(), startUrl: tab.navStart, icon: tab.favicon, wc });
       this.onChange();
     });
     wc.on('did-start-loading', () => { tab.loading = true; this.onChange(); });
     wc.on('did-stop-loading', () => { tab.loading = false; this.onChange(); });
     wc.on('did-start-navigation', (d) => {
-      if (d.isMainFrame && !d.isSameDocument) { this.adblock.resetCount(wc.id); tab.favicon = null; }
+      if (d.isMainFrame && !d.isSameDocument) {
+        this.adblock.resetCount(wc.id); tab.favicon = null; tab.navStart = d.url;
+        if (tab.certError) this.clearCertError(tab);
+      }
     });
     const onNav = () => {
       tab.url = wc.getURL();
@@ -190,10 +194,10 @@ class TabManager {
     else if (tab.crashed) tab.view.webContents.reload();
     tab.state = 'active';
 
-    if (tab.view) {
+    if (tab.view && !tab.certError) {
       this.win.contentView.addChildView(tab.view);
       this.layout();
-    }
+    } else if (tab.view) this.win.contentView.removeChildView(tab.view);
     this.ui.send('activated', this.isInternal(tab.url) ? '' : tab.url);
     if (this.isInternal(tab.url)) {
       // Nová karta si po načítaní sama zoberie fokus – ešte chvíľu ho vraciame do adresného riadku
@@ -344,6 +348,36 @@ class TabManager {
     this.tabs.splice(this.pinnedCount(), 0, t);
     this.onChange();
   }
+  // presun karty ťahaním – pripnuté ostávajú medzi pripnutými, ostatné za nimi
+  move(id, index) {
+    const t = this.get(id);
+    if (!t) return;
+    const from = this.tabs.indexOf(t);
+    this.tabs.splice(from, 1);
+    const pc = this.pinnedCount();
+    const lo = t.pinned ? 0 : pc, hi = t.pinned ? pc : this.tabs.length;
+    this.tabs.splice(Math.min(Math.max(Number(index) || 0, lo), hi), 0, t);
+    this.onChange();
+  }
+
+  // ---------------------------------------------------------- neplatný certifikát
+  // Stránka sa nenačíta; namiesto nej lišta prehliadača ukáže upozornenie (adresa ostáva v adresnom riadku)
+  showCertError(tab, info) {
+    tab.certError = info;
+    tab.url = info.url;
+    tab.title = info.host;
+    if (tab.id === this.activeId && tab.view) {
+      this.win.contentView.removeChildView(tab.view);
+      this.ui.send('activated', info.url);
+    }
+    this.onChange();
+  }
+  clearCertError(tab) {
+    delete tab.certError;
+    if (tab.id === this.activeId && tab.view) { this.win.contentView.addChildView(tab.view); this.layout(); }
+    this.onChange();
+  }
+
   sleepOthers() { for (const t of this.tabs) if (t.id !== this.activeId) this.discard(t, true); }
 
   reopenClosed() {
@@ -511,6 +545,7 @@ class TabManager {
       canGoForward: !!wc && wc.navigationHistory.canGoForward(),
       totalMemMB: Math.round(this.totalMem || 0),
       activeBlank: !!a && this.isBlank(a),
+      certError: a?.certError ? { host: a.certError.host, error: a.certError.error } : null,
       adblock: this.adblock.enabled,
       adblockTotal: this.adblock.total,
       siteAllowlisted: a && /^https?:/i.test(a.url) ? this.adblock.isAllowlisted(a.url) : false,

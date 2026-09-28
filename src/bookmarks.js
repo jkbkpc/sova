@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { EventEmitter } = require('events');
+const { readChromiumFavicons, hostKey } = require('./favicons');
 
 const BAR = 'bar';
 const OTHER = 'other';
@@ -50,6 +51,11 @@ class Bookmarks extends EventEmitter {
   }
   newId() { return 'b' + this.nextId++; }
   changed() { this.emit('change'); this.scheduleSave(); }
+  // menej dôležité zmeny (ikony) – zlúčené do jednej aktualizácie
+  changedSoon() {
+    clearTimeout(this.softTimer);
+    this.softTimer = setTimeout(() => this.changed(), 300);
+  }
   scheduleSave() { clearTimeout(this.timer); this.timer = setTimeout(() => this.save(), 800); }
   save() {
     clearTimeout(this.timer);
@@ -98,7 +104,7 @@ class Bookmarks extends EventEmitter {
     const n = this.find(id)?.node;
     if (!n || n.id === BAR || n.id === OTHER || n.id === 'root') return null;
     if (typeof title === 'string') n.title = title;
-    if (typeof url === 'string' && n.type === 'url') n.url = url;
+    if (typeof url === 'string' && n.type === 'url' && url !== n.url) { n.url = url; delete n.icon; delete n.iconTried; }
     this.changed();
     return n;
   }
@@ -132,13 +138,26 @@ class Bookmarks extends EventEmitter {
     return true;
   }
 
+  // ------------------------------------------------------------ ikony
+  setIcon(node, icon) {
+    if (!node || node.type !== 'url' || !icon || node.icon === icon) return false;
+    node.icon = icon;
+    delete node.iconTried;
+    this.changedSoon();
+    return true;
+  }
+  markIconTried(node) { node.iconTried = Date.now(); this.scheduleSave(); }
+
   // ------------------------------------------------------------ import
   // Chrome/Brave/Edge: súbor „Bookmarks“ (JSON) v profile prehliadača
   importChromium(file, label) {
     const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const icons = readChromiumFavicons(path.dirname(file));   // ikony, ktoré už má prehliadač uložené
+    const iconFor = (url) => icons.byUrl.get(url) || icons.byUrl.get(Bookmarks.norm(url)) || icons.byUrl.get(Bookmarks.norm(url) + '/')
+      || icons.byHost.get(hostKey(url)) || undefined;
     const conv = (n) => (n.type === 'folder'
       ? { id: this.newId(), type: 'folder', title: n.name || 'Priečinok', children: (n.children || []).map(conv), added: Date.now() }
-      : { id: this.newId(), type: 'url', title: n.name || n.url, url: n.url, added: Date.now() });
+      : { id: this.newId(), type: 'url', title: n.name || n.url, url: n.url, icon: iconFor(n.url), added: Date.now() });
     const r = data.roots || {};
     const barItems = (r.bookmark_bar?.children || []).map(conv);
     const otherItems = [...(r.other?.children || []), ...(r.synced?.children || [])].map(conv);
@@ -164,7 +183,8 @@ class Bookmarks extends EventEmitter {
       } else if (m[3] !== undefined) {
         const href = /HREF\s*=\s*"([^"]*)"/i.exec(m[3])?.[1];
         if (href && !/^(javascript|place):/i.test(href)) {
-          stack.at(-1).children.push({ id: this.newId(), type: 'url', title: dec(m[4]) || href, url: dec(href), added: Date.now() });
+          const icon = /\bICON\s*=\s*"(data:image\/[^"]{1,90000})"/i.exec(m[3])?.[1];
+          stack.at(-1).children.push({ id: this.newId(), type: 'url', title: dec(m[4]) || href, url: dec(href), icon, added: Date.now() });
         }
       } else if (/^<DL/i.test(tok)) {
         if (pending) { stack.push(pending); pending = null; }
@@ -206,7 +226,7 @@ class Bookmarks extends EventEmitter {
     const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const rec = (n, ind) => (n.children || []).map((c) => (c.type === 'folder'
       ? `${ind}<DT><H3${c.id === BAR ? ' PERSONAL_TOOLBAR_FOLDER="true"' : ''}>${esc(c.title)}</H3>\n${ind}<DL><p>\n${rec(c, ind + '    ')}${ind}</DL><p>\n`
-      : `${ind}<DT><A HREF="${esc(c.url)}" ADD_DATE="${Math.floor((c.added || Date.now()) / 1000)}">${esc(c.title)}</A>\n`)).join('');
+      : `${ind}<DT><A HREF="${esc(c.url)}" ADD_DATE="${Math.floor((c.added || Date.now()) / 1000)}"${c.icon ? ` ICON="${esc(c.icon)}"` : ''}>${esc(c.title)}</A>\n`)).join('');
     return `<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n${rec(this.root, '    ')}</DL><p>\n`;
   }
 }

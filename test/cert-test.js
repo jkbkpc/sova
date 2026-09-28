@@ -1,0 +1,30 @@
+// Test certifikátov: upozornenie len pri otvorení stránky v karte, nie pre ikony na pozadí (https.py na 443)
+const { app } = require('electron');
+const path = require('path'), fs = require('fs'), os = require('os');
+app.commandLine.appendSwitch('no-proxy-server');
+app.commandLine.appendSwitch('host-resolver-rules', 'MAP * 127.0.0.1');
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sova-c-'));
+app.setPath('userData', tmp);
+fs.writeFileSync(path.join(tmp, 'settings.json'), JSON.stringify({ restoreSession: false }));
+const ctx = require('../src/main.js');
+const { dialog } = require('electron');
+let dialogs = 0, answer = 0;
+dialog.showMessageBox = async (...a) => { dialogs++; console.log('DIALOG', a.at(-1).message); return { response: answer }; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+app.whenReady().then(async () => {
+  while (!ctx.bmui) await sleep(100);
+  const n = ctx.bookmarks.add({ title: 'Forti', url: 'https://forti.test/counter.html' });
+  await sleep(12000);
+  console.log(dialogs === 0 && !ctx.tabs.active.certError ? 'OK   žiadne okno ani upozornenie na pozadí' : 'FAIL okno na pozadí', 'icon', !!n.icon);
+  ctx.tabs.navigate('https://forti.test/fav/visited.html');
+  await sleep(2000);
+  console.log(ctx.tabs.active.certError ? 'OK   upozornenie v okne pri otvorení v karte' : 'FAIL bez upozornenia');
+  await ctx.win.webContents.executeJavaScript("document.querySelector('#ceproceed').click()");
+  for (let i = 0; i < 40 && !n.icon; i++) await sleep(250);
+  console.log(n.icon ? 'OK   ikona aj pre povolený certifikát' : 'FAIL bez ikony');
+  ctx.bmui.star(null);
+  await sleep(1500);
+  const m = ctx.bookmarks.findByUrl('https://forti.test/fav/visited.html');
+  console.log(m?.icon ? 'OK   hviezdička hneď uloží ikonu' : 'FAIL hviezdička bez ikony');
+  app.exit(0);
+});

@@ -190,3 +190,31 @@ body.tabs-bottom #bmbar { padding: 2px 8px; background: var(--bar); border-botto
 .tab.pinned.sleeping .fav img { filter: grayscale(1); opacity: .55; }
 .tab.last-pinned { margin-right: 6px; }
 .tab.last-pinned::after { content: ""; position: absolute; right: -4px; top: 9px; bottom: 9px; width: 1px; background: var(--line); }
+
+/* ----- neplatný certifikát (namiesto stránky) ----- */
+#certerr { position: fixed; left: 0; right: 0; top: var(--top, 80px); bottom: var(--bottom, 0px); background: var(--ce-bg, #fff);
+  display: flex; justify-content: center; overflow-y: auto; user-select: text; }
+#certerr[hidden] { display: none; }
+@media (prefers-color-scheme: dark) { #certerr { --ce-bg: #202124; } }
+.ce-inner { width: min(600px, 100% - 48px); padding: 14vh 0 40px; line-height: 1.55; font-size: 15px; }
+.ce-icon { width: 52px; height: 52px; stroke: none; margin-bottom: 18px; }
+#certerr h1 { font-size: 26px; font-weight: 500; margin: 0 0 16px; letter-spacing: -.01em; }
+#certerr p { margin: 0 0 12px; color: var(--muted); }
+#certerr p b { color: var(--text); font-weight: 600; word-break: break-all; }
+#certerr .ce-reason { color: var(--text); }
+#certerr code { display: inline-block; font-size: 12px; color: var(--muted); margin: 4px 0 26px; }
+.ce-actions { display: flex; justify-content: space-between; gap: 12px; }
+.ce-btn { height: 36px; padding: 0 18px; border-radius: 18px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.ce-pri { background: var(--accent); color: #fff; border: 0; }
+.ce-pri:hover { filter: brightness(1.08); }
+.ce-sec { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.ce-sec:hover { background: var(--tab-hover); }
+@media (prefers-color-scheme: dark) { .ce-pri { color: #111; } }
+#cedetail { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
+#ceproceed { color: #dc2626; font-size: 14px; }
+@media (prefers-color-scheme: dark) { #ceproceed { color: #f87171; } }
+
+/* ----- ťahanie kariet ----- */
+#tabs.dragging .tab:not(.drag) { transition: transform .15s ease; }
+.tab.drag { z-index: 5; background: var(--tab-active); box-shadow: 0 2px 8px rgba(0,0,0,.18); cursor: grabbing; }
+.tab.drag::before, .tab.drag + .tab::before { display: none; }

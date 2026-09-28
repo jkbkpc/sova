@@ -283,6 +283,20 @@ app.whenReady().then(async () => {
   ipcMain.on('nav:forward', () => tabs.wc()?.navigationHistory.goForward());
   ipcMain.on('nav:reload', () => tabs.wc()?.reload());
   ipcMain.on('nav:stop', () => tabs.wc()?.stop());
+  ipcMain.on('tab:move', (_e, id, index) => tabs.move(id, index));
+  // upozornenie na neplatný certifikát: späť / pokračovať
+  ipcMain.on('cert:back', () => {
+    const t = tabs.active, wc = tabs.wc();
+    if (!t?.certError || !wc) return;
+    if (wc.navigationHistory.canGoBack()) wc.navigationHistory.goBack();
+    else tabs.navigate('');
+  });
+  ipcMain.on('cert:proceed', () => {
+    const t = tabs.active, wc = tabs.wc();
+    if (!t?.certError || !wc) return;
+    certExceptions.add(t.certError.host);
+    wc.reload();
+  });
   ipcMain.on('find', (_e, text, opts) => {
     const wc = tabs.wc();
     if (!wc) return;
@@ -332,22 +346,16 @@ app.whenReady().then(async () => {
   });
 });
 
-// Neplatný certifikát (napr. FortiGate, tlačiareň, NAS so self-signed certifikátom) – spýtať sa
-app.on('certificate-error', (event, wc, url, error, _cert, callback) => {
+// Neplatný certifikát (napr. FortiGate, tlačiareň, NAS so self-signed certifikátom) – upozornenie priamo v okne
+app.on('certificate-error', (event, wc, url, error, _cert, callback, isMainFrame) => {
   let host = '';
   try { host = new URL(url).host; } catch {}
   event.preventDefault();
   if (certExceptions.has(host)) return callback(true);
-  dialog.showMessageBox(win, {
-    type: 'warning', buttons: ['Späť do bezpečia', 'Pokračovať aj tak'], defaultId: 0, cancelId: 0,
-    title: 'Nedôveryhodný certifikát',
-    message: `Certifikát stránky ${host} nie je dôveryhodný.`,
-    detail: `${error}\n\nPokračuj len vtedy, ak vieš, že ide o tvoje zariadenie (napr. router, firewall, NAS).`,
-  }).then(({ response }) => {
-    if (response === 1) certExceptions.add(host);
-    callback(response === 1);
-    pushState();
-  });
+  callback(false);
+  // pýtame sa len pri otváraní stránky v karte; obrázky, ikony a rozhranie prehliadača sa potichu zamietnu
+  const tab = wc && tabs?.tabs.find((t) => t.view && !t.view.webContents.isDestroyed() && t.view.webContents === wc);
+  if (tab && isMainFrame !== false) tabs.showCertError(tab, { url, host, error });
 });
 
 app.on('second-instance', (_e, argv) => {

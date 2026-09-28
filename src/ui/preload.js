@@ -7,7 +7,7 @@ const SEND = ['ui-height', 'tab:new', 'tab:activate', 'tab:close', 'tab:menu', '
   'suggest:query', 'suggest:select', 'suggest:hide', 'open-internal',
   'bm:star', 'bm:open', 'bm:folder-menu', 'bm:overflow-menu', 'bm:move', 'bm:context', 'bm:other-menu',
   'tools:stats', 'tools:downloads', 'tools:downloads-rect', 'site:info',
-  'bm:add-drop'];
+  'bm:add-drop', 'tab:move', 'cert:back', 'cert:proceed'];
 const INVOKE = [];
 const ON = ['state', 'activated', 'focus-address', 'open-find', 'find-result', 'suggest:result', 'bm:star-request'];
 
