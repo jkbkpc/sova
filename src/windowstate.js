@@ -5,6 +5,16 @@ const { screen } = require('electron');
 
 const DEFAULT = { width: 1280, height: 820 };
 
+// je okno aspoň čiastočne na niektorom monitore? (napr. po odpojení druhého monitora)
+function onScreen(s) {
+  const ok = s && [s.x, s.y, s.width, s.height].every(Number.isFinite) && s.width >= 480 && s.height >= 300;
+  return ok && screen.getAllDisplays().some(({ workArea: a }) => {
+    const w = Math.min(s.x + s.width, a.x + a.width) - Math.max(s.x, a.x);
+    const h = Math.min(s.y + s.height, a.y + a.height) - Math.max(s.y, a.y);
+    return w >= 120 && h >= 60 && s.y >= a.y - 8;
+  });
+}
+
 function loadWindowState(dir) {
   const file = path.join(dir, 'window.json');
   let s = null;
@@ -34,4 +44,4 @@ function trackWindowState(win, file) {
   win.on('close', () => { clearTimeout(timer); save(); });
 }
 
-module.exports = { loadWindowState, trackWindowState };
+module.exports = { loadWindowState, trackWindowState, onScreen };

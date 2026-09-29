@@ -31,6 +31,7 @@ function status(d) {
     return `${size(d.received)}${d.total ? ' z ' + size(d.total) : ''} · ${size(d.speed)}/s${left}`;
   }
   if (d.state === 'completed') return d.exists === false ? `Súbor bol presunutý alebo odstránený · ${time}` : `${size(d.received || d.total)} · ${time}`;
+  if (d.blocked) return `Zablokované – stránka je na zozname nebezpečných · ${time}`;
   if (d.state === 'cancelled') return `Zrušené · ${time}`;
   return `Prerušené · ${time}`;
 }

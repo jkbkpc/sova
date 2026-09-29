@@ -7,9 +7,9 @@ const SEND = ['ui-height', 'tab:new', 'tab:activate', 'tab:close', 'tab:menu', '
   'suggest:query', 'suggest:select', 'suggest:hide', 'open-internal',
   'bm:star', 'bm:open', 'bm:folder-menu', 'bm:overflow-menu', 'bm:move', 'bm:context', 'bm:other-menu',
   'tools:stats', 'tools:downloads', 'tools:downloads-rect', 'site:info',
-  'bm:add-drop', 'tab:move', 'cert:back', 'cert:proceed', 'update:install'];
+  'bm:add-drop', 'tab:move', 'cert:back', 'cert:proceed', 'update:install', 'zoom:bubble', 'window:new', 'window:menu', 'danger:back', 'danger:proceed'];
 const INVOKE = [];
-const ON = ['state', 'activated', 'focus-address', 'open-find', 'find-result', 'suggest:result', 'bm:star-request'];
+const ON = ['state', 'activated', 'focus-address', 'open-find', 'find-step', 'find-result', 'suggest:result', 'bm:star-request'];
 
 contextBridge.exposeInMainWorld('sova', {
   send: (ch, ...a) => { if (SEND.includes(ch)) ipcRenderer.send(ch, ...a); },

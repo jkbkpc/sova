@@ -9,6 +9,10 @@ class H(http.server.SimpleHTTPRequestHandler):
                 self.send_response(200); self.send_header('Content-Type','image/gif'); self.end_headers()
                 self.wfile.write(b'GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;'); return
             self.path='/ads.js'
+        if self.path.startswith('/__ua'):
+            import json
+            b=('<!doctype html><title>ua</title><pre id="h">'+json.dumps({k.lower():v for k,v in self.headers.items()})+'</pre>').encode()
+            self.send_response(200); self.send_header('Content-Type','text/html; charset=utf-8'); self.end_headers(); self.wfile.write(b); return
         if self.path.startswith('/__redir'):
             import urllib.parse as up
             to=up.parse_qs(up.urlparse(self.path).query).get('to',['/'])[0]

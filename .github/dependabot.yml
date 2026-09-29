@@ -1,0 +1,20 @@
+# Dependabot každé ráno skontroluje nové verzie Electronu (bezpečnostné záplaty Chromia)
+# a ďalších knižníc a pripraví na ne pull request. Záplaty Electronu (napr. 44.4.5 → 44.4.6)
+# potom workflow „security-update“ sám zlúči a vydá novú verziu Sovy.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "05:30"
+      timezone: "Europe/Bratislava"
+    allow:
+      - dependency-name: "electron"
+      - dependency-name: "electron-updater"
+      - dependency-name: "electron-builder"
+      - dependency-name: "@ghostery/*"
+      - dependency-name: "tldts-experimental"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"

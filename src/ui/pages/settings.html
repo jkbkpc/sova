@@ -71,6 +71,16 @@
       <input type="checkbox" data-key="askWhereToSave">
     </label>
 
+    <h2>Zabezpečenie</h2>
+    <label class="row">
+      <span><b>Ochrana pred podvodnými a nebezpečnými stránkami</b><small>Varuje pred phishingom a stránkami so škodlivým softvérom a zablokuje sťahovanie z nich. Zoznamy (URLhaus, Phishing Army, CERT Polska, OpenPhish) sa aktualizujú každých 30 minút a kontrola prebieha len v počítači.</small></span>
+      <input type="checkbox" data-key="safeBrowsing">
+    </label>
+    <div class="row">
+      <span><b>Zoznamy nebezpečných stránok</b><small id="sbstatus">…</small></span>
+      <button id="sbbtn" class="btn">Aktualizovať teraz</button>
+    </div>
+
     <h2>Aktualizácie</h2>
     <div class="row">
       <span><b>Sova <span id="upver"></span></b><small id="upstatus">…</small></span>
@@ -106,7 +116,13 @@
       <span><b>Vymazať údaje prehliadania</b><small>Cookies, cache a lokálne úložisko všetkých stránok. Históriu mažeš v <a href="sova://history/">Histórii</a>.</small></span>
       <button id="cleardata" class="btn">Vymazať</button>
     </div>
-    <p class="hint">Skratky: Ctrl+T nová karta · Ctrl+W zavrieť · Ctrl+Shift+T obnoviť zavretú · Ctrl+Tab ďalšia karta · Ctrl+L adresa · Ctrl+F hľadať · Ctrl+H história · Ctrl+D záložka · Ctrl+Shift+O záložky · Ctrl+J stiahnuté súbory · Ctrl+, nastavenia · F12 vývojárske nástroje. Pravé tlačidlo na karte ponúka „Uspať teraz“ a „Nikdy neuspávať“.</p>
+    <p class="hint"><b>Klávesové skratky</b><br>
+      Okná: Ctrl+N nové okno · Ctrl+Shift+N okno inkognito · Ctrl+Shift+W zavrieť okno (aj pravé tlačidlo na „+“)<br>
+      Karty: Ctrl+T nová · Ctrl+W zavrieť · Ctrl+Shift+T obnoviť zavretú · Ctrl+Tab / Ctrl+PgDn ďalšia · Ctrl+Shift+Tab / Ctrl+PgUp predchádzajúca · Ctrl+1…8 karta podľa poradia · Ctrl+9 posledná · Ctrl+Shift+PgUp/PgDn posunúť kartu<br>
+      Stránka: Ctrl+L / Alt+D / F6 adresa · Ctrl+Enter doplní www…com · F5 / Ctrl+R obnoviť · Ctrl+Shift+R bez cache · Esc zastaviť · Alt+←/→ späť/dopredu · Alt+Home nová karta · Ctrl+F hľadať · F3 / Ctrl+G ďalší výskyt · Ctrl+P tlačiť · Ctrl+S uložiť · Ctrl+U zdrojový kód · F11 celá obrazovka<br>
+      Priblíženie: Ctrl + koliesko · Ctrl + / Ctrl − · Ctrl+0 pôvodná veľkosť (pamätá sa pre každú stránku)<br>
+      Prehliadač: Ctrl+D záložka · Ctrl+Shift+B lišta záložiek · Ctrl+Shift+O správca záložiek · Ctrl+H história · Ctrl+Shift+Delete vymazať históriu · Ctrl+J stiahnuté súbory · Ctrl+, nastavenia · F12 / Ctrl+Shift+I / Ctrl+Shift+J vývojárske nástroje<br>
+      Pravé tlačidlo na karte ponúka „Uspať teraz“ a „Nikdy neuspávať“.</p>
   </div>
 </main>
 <div class="toast" id="toast">Uložené</div>

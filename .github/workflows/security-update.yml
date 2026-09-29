@@ -1,0 +1,41 @@
+# Keď Dependabot pripraví záplatu Electronu (rovnaká hlavná verzia, napr. 44.4.5 → 44.4.6),
+# tento workflow ju sám zlúči a hneď vydá novú verziu Sovy. Nainštalované Sovy si ju stiahnu samy.
+# Väčšie zmeny (napr. Electron 44 → 45) sa nezlučujú automaticky – čakajú na kontrolu.
+name: Bezpečnostná aktualizácia
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.merge.outputs.release }}
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: merge
+        if: contains(steps.meta.outputs.dependency-names, 'electron') && steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge "$PR_URL" --squash --delete-branch
+          echo "release=true" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: merge
+    if: needs.merge.outputs.release == 'true'
+    uses: ./.github/workflows/release.yml
+    with:
+      reason: "Bezpečnostná aktualizácia Electronu (${{ github.event.pull_request.title }})"
+    permissions:
+      contents: write

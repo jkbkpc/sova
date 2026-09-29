@@ -69,6 +69,7 @@
       return `${size(d.received)}${d.total ? ' z ' + size(d.total) : ''} · ${size(d.speed)}/s${left}`;
     }
     if (d.state === 'completed') return d.exists === false ? 'Súbor bol presunutý alebo odstránený' : `${size(d.received || d.total)} · ${ago(d.end)}`;
+    if (d.blocked) return 'Zablokované – nebezpečný zdroj';
     if (d.state === 'cancelled') return 'Zrušené';
     return 'Prerušené – skús to znova';
   }

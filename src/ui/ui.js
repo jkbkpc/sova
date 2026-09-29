@@ -110,7 +110,9 @@ function renderTabs() {
   const PIN_W = 40;                                         // pripnutá karta = len ikona
   const pinned = state.tabs.filter((t) => t.pinned).length;
   const normal = state.tabs.length - pinned;
-  const avail = strip.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 36 - pinned * (PIN_W + 1) - (pinned ? 6 : 0);
+  const incog = $('#incog');
+  const avail = strip.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 36 - pinned * (PIN_W + 1) - (pinned ? 6 : 0)
+    - (incog.hidden ? 0 : incog.offsetWidth + 6);
   const tabW = normal ? Math.min(220, avail / normal) : 220;
   const narrow = tabW < 64, compact = !narrow && tabW < 120;
   state.tabs.forEach((t, i) => {
@@ -169,13 +171,58 @@ function renderToolbar() {
     : `Zablokované na tejto stránke: ${a?.blocked || 0} (celkovo ${state.adblockTotal || 0})\nKlikni pre vypnutie na ${state.siteHost || 'tejto stránke'}`;
   renderStats();
   renderSiteInfo();
-  document.title = a?.title ? `${a.title} – Sova` : 'Sova';
+  const suffix = state.incognito ? 'Sova – inkognito' : 'Sova';
+  document.title = a?.title ? `${a.title} – ${suffix}` : suffix;
 }
 
 api.on('state', (s) => {
   state = s; applyLayout(s.tabsPosition || 'top');
-  renderTabs(); renderToolbar(); renderBookmarks(); renderDownloads(); renderNtp(); renderCert(); renderUpdate();
+  renderTabs(); renderToolbar(); renderBookmarks(); renderDownloads(); renderNtp(); renderCert(); renderUpdate(); renderZoom(); renderDanger();
 });
+
+// ------------------------------------------------------------ nebezpečná stránka
+let dangerShown = '';
+function renderDanger() {
+  const d = state.danger;
+  const key = d ? `${state.activeId}|${d.url}` : '';
+  if (key === dangerShown) return;
+  dangerShown = key;
+  $('#danger').hidden = !d;
+  if (!d) return;
+  const phishing = d.kind === 'phishing';
+  $('#dgtitle').textContent = phishing ? 'Podvodná stránka' : 'Stránka so škodlivým softvérom';
+  $('#dgtext').innerHTML = phishing
+    ? `Stránka <b>${escH(d.host)}</b> je nahlásená ako podvodná (phishing). Môže sa tváriť ako tvoja banka, e-mail alebo firma a pokúsiť sa vylákať heslo či údaje o platobnej karte.`
+    : `Stránka <b>${escH(d.host)}</b> je nahlásená ako zdroj škodlivého softvéru. Môže sa pokúsiť nainštalovať do počítača vírus alebo ransomvér.`;
+  $('#dgsrc').textContent = `Zdroj: ${d.list}`;
+  $('#dghost').textContent = d.host;
+  $('#dgdetail').hidden = true;
+  $('#dgadv').textContent = 'Podrobnosti';
+}
+$('#dgadv').addEventListener('click', () => {
+  const x = $('#dgdetail');
+  x.hidden = !x.hidden;
+  $('#dgadv').textContent = x.hidden ? 'Podrobnosti' : 'Skryť podrobnosti';
+});
+$('#dgback').addEventListener('click', () => api.send('danger:back'));
+$('#dgproceed').addEventListener('click', (e) => { e.preventDefault(); api.send('danger:proceed'); });
+
+// ------------------------------------------------------------ priblíženie
+let zoomPulse = null;
+function renderZoom() {
+  const z = state.zoom || 100;
+  const b = $('#zoom');
+  b.hidden = z === 100 || !!state.activeBlank || !!state.certError || !!state.danger;
+  b.querySelector('span').textContent = z + ' %';
+  b.title = `Priblíženie ${z} % – klikni pre zmenu (Ctrl + koliesko, Ctrl +/−, Ctrl+0)`;
+  // po zmene priblíženia ukážeme na chvíľu bublinu (ako Chrome)
+  if (zoomPulse !== null && state.zoomPulse !== zoomPulse) {
+    requestAnimationFrame(() => api.send('zoom:bubble', rectOf(b.hidden ? $('#star') : b), true));
+  }
+  zoomPulse = state.zoomPulse;
+}
+const rectOf = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; };
+$('#zoom').addEventListener('click', (e) => api.send('zoom:bubble', rectOf(e.currentTarget), false));
 
 // ------------------------------------------------------------ aktualizácia
 function renderUpdate() {
@@ -248,6 +295,14 @@ $('#ntpform').addEventListener('submit', (e) => {
 api.on('focus-address', () => { address.focus(); address.select(); });
 
 $('#newtab').addEventListener('click', () => api.send('tab:new'));
+// pravé tlačidlo na „+“: nová karta / nové okno / okno inkognito
+$('#newtab').addEventListener('contextmenu', (e) => { e.preventDefault(); api.send('window:menu'); });
+// okno inkognito
+if (document.documentElement.classList.contains('incognito')) {
+  $('#incog').hidden = false;
+  $('#ntpincog').hidden = false;
+  document.title = 'Sova – inkognito';
+}
 $('#tabs').addEventListener('wheel', (e) => { $('#tabs').scrollLeft += e.deltaY || e.deltaX; }, { passive: true });
 $('#tabstrip').addEventListener('dblclick', (e) => { if (e.target.id === 'tabs' || e.target.id === 'tabstrip') api.send('tab:new'); });
 $('#back').addEventListener('click', () => api.send('nav:back'));
@@ -307,6 +362,10 @@ address.addEventListener('input', (e) => {
   querySuggest();
 });
 address.addEventListener('keydown', (e) => {
+  // Ctrl+Enter: „google“ → www.google.com
+  if (e.key === 'Enter' && e.ctrlKey && /^[\w-]+$/.test(address.value.trim())) {
+    e.preventDefault(); hideSuggest(); api.send('nav:go', `www.${address.value.trim()}.com`); address.blur(); return;
+  }
   if (e.key === 'Enter') { e.preventDefault(); go(); return; }
   if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && sugg.items.length) {
     e.preventDefault();
@@ -329,6 +388,8 @@ function openFind() { findbar.hidden = false; reportHeight(); findtext.focus(); 
 function closeFind() { findbar.hidden = true; $('#findcount').textContent = ''; api.send('find', ''); reportHeight(); }
 function doFind(forward, findNext = false) { api.send('find', findtext.value, { forward, findNext }); if (!findtext.value) $('#findcount').textContent = ''; }
 api.on('open-find', openFind);
+// F3 / Ctrl+G – ďalší výskyt (Shift = predchádzajúci); hľadanie sa otvorí, ak ešte nie je
+api.on('find-step', (forward) => { if (findbar.hidden || !findtext.value) openFind(); else doFind(forward, true); });
 api.on('find-result', (r) => { if (r.finalUpdate) $('#findcount').textContent = r.matches ? `${r.activeMatchOrdinal} z ${r.matches}` : 'Nenájdené'; });
 findtext.addEventListener('input', () => doFind(true));
 findtext.addEventListener('keydown', (e) => {
@@ -343,7 +404,6 @@ $('#findclose').addEventListener('click', closeFind);
 const FOLDER_SVG = '<svg viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3l1.5 1.6h5.5c.7 0 1.2.5 1.2 1.2v6.2c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z"/></svg>';
 const GLOBE_SVG = '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>';
 const escH = (s) => String(s || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const rectOf = (el) => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; };
 let bmKey = '', dragId = null, bmHidden = [];
 // ťahá sa záložka z lišty alebo z menu priečinka?
 const isBmDrag = (e) => !!dragId || e.dataTransfer.types.includes('application/x-sova-bm')

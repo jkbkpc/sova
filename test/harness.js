@@ -95,9 +95,9 @@ app.whenReady().then(async () => {
   const snap = tabs.snapshot();
   console.log('stavy kariet:', snap.tabs.map((t) => `${t.title}=${t.state}`).join(', '), '| RAM', snap.totalMemMB, 'MB');
   await shot('shot-tabs.png');
-  tabs.saveSession();
+  ctx.saveSession('test');
   const sess = JSON.parse(fs.readFileSync(path.join(tmp, 'session.json'), 'utf8'));
-  check('relácia uložená', sess.tabs.length === 3, `(${sess.tabs.length} kariet)`);
+  check('relácia uložená', sess.windows[0].tabs.length === 3, `(${sess.windows[0].tabs.length} kariet)`);
 
   // nastavenia
   win.webContents.send('state', tabs.snapshot());

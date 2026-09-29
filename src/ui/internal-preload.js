@@ -8,6 +8,11 @@ if (/^https?:$/.test(location.protocol)) {
     const code = ipcRenderer.sendSync('adblock:early-scripts', location.href);
     if (code) webFrame.executeJavaScript(code);
   } catch { /* stránka sa načíta aj bez nich */ }
+  // kompatibilita (napr. prihlásenie do Google)
+  try {
+    const compat = ipcRenderer.sendSync('compat:early-scripts', location.href);
+    if (compat) webFrame.executeJavaScript(compat);
+  } catch {}
 }
 
 if (location.protocol === 'sova:') {

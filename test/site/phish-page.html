@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Test počítadlo</title>
+<script src="http://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+<script src="http://www.google-analytics.com/analytics.js"></script>
+<style>body{font:16px sans-serif;padding:30px}</style></head>
+<body><h1>Testovacia stránka</h1>
+<p>Tiky: <b id="t">0</b></p>
+<input id="f" placeholder="formulár">
+<div class="div-gpt-ad-12345" id="adtest" style="width:300px;height:250px;background:red">REKLAMA</div>
+<ins class="adsbygoogle" data-ad-client="ca-pub-123" id="adtest2" style="display:block;width:300px;height:90px;background:orange">ADSENSE</ins>
+<img src="http://ad.doubleclick.net/ddm/ad/test.gif" id="adimg">
+<script>
+window.__ticks=0; window.__maxGap=0; window.__vis=[document.visibilityState];
+let last=Date.now();
+setInterval(()=>{const n=Date.now(); __maxGap=Math.max(__maxGap,n-last); last=n; (window.__tt=window.__tt||[]).push(n%100000); __ticks++; document.getElementById('t').textContent=__ticks;},100);
+document.addEventListener('visibilitychange',()=>__vis.push(document.visibilityState));
+document.addEventListener('freeze',()=>__vis.push('freeze-event@'+Date.now()%100000));
+document.addEventListener('resume',()=>__vis.push('resume-event@'+Date.now()%100000));
+</script></body></html>

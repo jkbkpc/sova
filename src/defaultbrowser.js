@@ -9,7 +9,7 @@ const PROGID = 'SovaHTML';
 const CLIENT = `HKCU\\Software\\Clients\\StartMenuInternet\\${NAME}`;
 const CLASSES = `HKCU\\Software\\Classes\\${PROGID}`;
 const URL_TYPES = ['http', 'https'];
-const FILE_TYPES = ['.htm', '.html', '.shtml', '.xht', '.xhtml'];
+const FILE_TYPES = ['.htm', '.html', '.shtml', '.xht', '.xhtml', '.pdf'];
 
 const reg = (args) => new Promise((resolve) => {
   execFile('reg.exe', args, { windowsHide: true, timeout: 10000 }, (err, stdout) => resolve(err ? null : String(stdout)));

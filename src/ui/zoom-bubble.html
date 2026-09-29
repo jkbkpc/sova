@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+  :root { --card: #ffffff; --text: #1f2023; --muted: #6b6e76; --line: #d2d4d9; --hover: #eef0f3; --accent: #2563eb; color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    :root { --card: #2a2b2f; --text: #e7e8ea; --muted: #9a9ca3; --line: #3a3b40; --hover: #34353a; --accent: #60a5fa; color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; font: 13px/1.35 "Segoe UI", system-ui, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  #card { margin: 0 6px 10px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 16px rgba(0,0,0,.16);
+    display: flex; align-items: center; gap: 6px; padding: 10px 10px 10px 14px; }
+  #pct { flex: 1; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  button { height: 30px; min-width: 30px; border-radius: 15px; border: 1px solid var(--line); background: transparent; color: var(--text);
+    font: inherit; font-size: 16px; line-height: 1; cursor: default; padding: 0 8px; }
+  button:hover { background: var(--hover); }
+  #reset { font-size: 12px; padding: 0 10px; color: var(--accent); }
+</style>
+</head>
+<body>
+<div id="card">
+  <span id="pct">100 %</span>
+  <button id="out" title="Oddialiť (Ctrl + −)">−</button>
+  <button id="in" title="Priblížiť (Ctrl + +)">+</button>
+  <button id="reset" title="Pôvodná veľkosť (Ctrl + 0)">Obnoviť</button>
+</div>
+<script>
+  const B = window.bubble;
+  const $ = (s) => document.getElementById(s);
+  B.on('data', (p) => {
+    $('pct').textContent = `Priblíženie ${p} %`;
+    $('reset').disabled = p === 100;
+    requestAnimationFrame(() => B.size($('card').getBoundingClientRect().height + 12));
+  });
+  $('in').onclick = () => B.send('step', 1);
+  $('out').onclick = () => B.send('step', -1);
+  $('reset').onclick = () => B.send('reset');
+  document.addEventListener('mouseenter', () => B.send('hover', true));
+  document.addEventListener('mouseleave', () => B.send('hover', false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') B.close(); });
+  B.on('shown', () => B.send('ready'));
+</script>
+</body>
+</html>

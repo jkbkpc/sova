@@ -56,7 +56,8 @@ const upBtn = document.getElementById('upbtn');
 const hm = (t) => new Date(t).toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' });
 async function renderUpdate() {
   const u = await api.invoke('update:state');
-  document.getElementById('upver').textContent = u.version + (u.portable ? ' (prenosná)' : '');
+  document.getElementById('upver').textContent = u.version + (u.portable ? ' (prenosná)' : '')
+    + (u.chrome ? ` · Chromium ${u.chrome} · Electron ${u.electron}` : '');
   const txt = {
     disabled: 'Aktualizácie fungujú len v nainštalovanej verzii (nie pri spustení cez npm start).',
     idle: 'Kontrola prebehne o chvíľu po spustení a potom každé 4 hodiny.',
@@ -110,3 +111,23 @@ defBtn.addEventListener('click', async () => {
 window.addEventListener('focus', renderDefault);            // návrat z Nastavení Windows
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderDefault(); });
 renderDefault();
+
+// ---------------------------------------------------------------- ochrana pred nebezpečnými stránkami
+const sbBtn = document.getElementById('sbbtn');
+const nf = new Intl.NumberFormat('sk-SK');
+const ago = (t) => {
+  if (!t) return 'ešte nie';
+  const m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? 'práve teraz' : m < 60 ? `pred ${m} min` : `o ${hm(t)}`;
+};
+async function renderSafe() {
+  const s = await api.invoke('safe:state');
+  const parts = s.lists.map((l) => `${l.name}: ${l.count ? nf.format(l.count) : '—'}${l.error && !l.count ? ' (nedostupný)' : ''}`);
+  const last = Math.max(0, ...s.lists.map((l) => l.fetched));
+  document.getElementById('sbstatus').textContent = s.checking ? 'Aktualizujem zoznamy…'
+    : `${nf.format(s.total)} nebezpečných stránok · skontrolované ${ago(last)}. ${parts.join(' · ')}`;
+  sbBtn.disabled = s.checking;
+}
+sbBtn.addEventListener('click', async () => { sbBtn.disabled = true; await api.invoke('safe:refresh'); renderSafe(); });
+api.on('safe:changed', renderSafe);
+renderSafe();

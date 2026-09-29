@@ -43,15 +43,27 @@ class Downloads extends EventEmitter {
     return p;
   }
 
-  attach(session) {
-    session.on('will-download', (_e, item) => {
+  // incognito: sťahovanie funguje, ale do zoznamu na disku sa neuloží
+  attach(session, { incognito = false } = {}) {
+    session.on('will-download', (_e, item, wc) => {
       const id = this.nextId++;
+      // súbor zo stránky so škodlivým softvérom sa nestiahne
+      const bad = this.guard?.(item.getURL());
+      if (bad) {
+        item.cancel();
+        this.list.unshift({ id, url: item.getURL(), filename: item.getFilename(), path: '', total: item.getTotalBytes(), received: 0,
+          state: 'cancelled', blocked: bad.kind, start: Date.now(), end: Date.now(), speed: 0, ...(incognito ? { incognito: true } : {}) });
+        this.changed(true);
+        this.emit('started', this.list[0], wc && !wc.isDestroyed() ? wc.id : 0);
+        return;
+      }
       if (!this.settings.get('askWhereToSave')) item.setSavePath(this.uniquePath(this.dir(), item.getFilename()));
       const d = {
         id, url: item.getURL(), filename: item.getFilename(), path: item.getSavePath(),
         total: item.getTotalBytes(), received: 0, state: 'progressing', paused: false,
         start: Date.now(), end: 0, speed: 0, mime: item.getMimeType(),
       };
+      if (incognito) d.incognito = true;
       this.items.set(id, item);
       this.list.unshift(d);
       if (this.list.length > MAX_ITEMS) this.list.length = MAX_ITEMS;
@@ -84,7 +96,7 @@ class Downloads extends EventEmitter {
         this.emit('done', d);
       });
       this.changed(true);
-      this.emit('started', d);
+      this.emit('started', d, wc && !wc.isDestroyed() ? wc.id : 0);
     });
   }
 
@@ -93,10 +105,16 @@ class Downloads extends EventEmitter {
     if (!this.emitTimer) this.emitTimer = setTimeout(() => { this.emitTimer = null; this.emit('change'); }, 250);
     if (saveNow) this.save(); else this.scheduleSave();
   }
+  // zatvorené posledné okno inkognito → jeho sťahovania zmiznú zo zoznamu (súbory ostanú na disku)
+  forgetIncognito() {
+    const before = this.list.length;
+    this.list = this.list.filter((d) => !d.incognito || d.state === 'progressing');
+    if (this.list.length !== before) this.changed(false);
+  }
   scheduleSave() { clearTimeout(this.timer); this.timer = setTimeout(() => this.save(), 2000); }
   save() {
     clearTimeout(this.timer);
-    try { fs.writeFileSync(this.file, JSON.stringify({ list: this.list })); } catch (e) { console.error('[downloads]', e.message); }
+    try { fs.writeFileSync(this.file, JSON.stringify({ list: this.list.filter((d) => !d.incognito) })); } catch (e) { console.error('[downloads]', e.message); }
   }
 
   // ------------------------------------------------------------ zoznam

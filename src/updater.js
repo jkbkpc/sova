@@ -24,7 +24,8 @@ class Updater extends EventEmitter {
     this.settings = settings;
     this.portable = !!process.env.PORTABLE_EXECUTABLE_FILE;
     this.enabled = app.isPackaged || !!testFeed;
-    this.s = { version: app.getVersion(), status: this.enabled ? 'idle' : 'disabled', portable: this.portable,
+    this.s = { version: app.getVersion(), chrome: process.versions.chrome, electron: process.versions.electron,
+      status: this.enabled ? 'idle' : 'disabled', portable: this.portable,
       newVersion: '', progress: 0, error: '', lastCheck: 0, releaseUrl: `https://github.com/${REPO}/releases/latest` };
     this.timer = null;
     if (!this.enabled || this.portable) return;

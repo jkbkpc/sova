@@ -1,0 +1,4 @@
+# test phishing
+evil.test
+bad.test
+docs.google.com

@@ -18,6 +18,7 @@ const DEFAULTS = {
   downloadDir: '',          // priečinok na stiahnuté súbory ('' = Stiahnuté/Downloads)
   askWhereToSave: false,    // pri každom sťahovaní sa spýtať, kam uložiť
   autoUpdate: true,         // nové verzie Sovy sťahovať automaticky na pozadí
+  safeBrowsing: true,       // varovať pred podvodnými (phishing) a nebezpečnými (malvér) stránkami
 };
 
 const SEARCH = {

@@ -14,7 +14,7 @@ class AdBlock {
   constructor(settings, onChange) {
     this.settings = settings;
     this.onChange = onChange;
-    this.session = null;
+    this.sessions = new Set();          // bežné okná + inkognito
     this.blocker = null;
     this.counts = new Map(); // webContentsId -> počet zablokovaných
     this.total = 0;
@@ -83,12 +83,25 @@ class AdBlock {
   }
 
   async init(sess) {
-    this.session = sess;
+    this.sessions.add(sess);
     if (this.settings.get('adblock')) await this.start();
     this.settings.on('change', async (key) => {
       if (key === 'adblock') this.settings.get('adblock') ? await this.start() : this.stop();
       if (key === 'adblockLevel' && this.blocker) { this.stop(); await this.start(); }
     });
+  }
+
+  // ďalšia relácia (okno inkognito) – blokovanie platí aj v nej
+  addSession(sess) {
+    if (this.sessions.has(sess)) return;
+    this.sessions.add(sess);
+    if (this.blocker) this.enableIn(this.blocker, sess);
+  }
+  enableIn(blocker, sess) {
+    // knižnica si pre každú reláciu registruje rovnaké IPC kanály – pri druhej relácii by to zlyhalo;
+    // obsluha je rovnaká (volá ten istý blocker), stačí ju zaregistrovať znova
+    for (const ch of ['@ghostery/adblocker/inject-cosmetic-filters', '@ghostery/adblocker/is-mutation-observer-enabled']) ipcMain.removeHandler(ch);
+    blocker.enableBlockingInSession(sess);
   }
 
   async start() {
@@ -127,7 +140,7 @@ class AdBlock {
 
     // počas načítavania mohlo byť blokovanie vypnuté
     if (!this.settings.get('adblock')) return;
-    blocker.enableBlockingInSession(this.session);
+    for (const sess of this.sessions) this.enableIn(blocker, sess);
     this.blocker = blocker;
     this.scriptCache.clear();
     this.onChange();
@@ -135,7 +148,7 @@ class AdBlock {
 
   stop() {
     if (!this.blocker) return;
-    this.blocker.disableBlockingInSession(this.session);
+    for (const sess of this.sessions) { try { this.blocker.disableBlockingInSession(sess); } catch {} }
     this.blocker = null;
     this.scriptCache.clear();
     this.onChange();

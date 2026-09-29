@@ -12,14 +12,25 @@ const PERM_LABELS = {
   'clipboard-read': 'Čítanie schránky', 'display-capture': 'Zdieľanie obrazovky',
 };
 
-function setupSiteInfo({ win, tabs, session, settings, adblock, certExceptions, permDecisions, pushState }) {
-  // posledný overený certifikát pre každý server (nemení overovanie – výsledok necháva na Chromium)
-  const certs = new Map();
-  session.setCertificateVerifyProc((req, cb) => {
-    certs.set(req.hostname, { cert: req.certificate, result: req.verificationResult });
-    if (certs.size > 2000) certs.delete(certs.keys().next().value);
-    cb(-3);
-  });
+// posledný overený certifikát pre každý server (nemení overovanie – výsledok necháva na Chromium);
+// jeden zoznam pre každú reláciu (bežné okná / inkognito), zdieľaný všetkými oknami
+const certsBySession = new WeakMap();
+function certsFor(session) {
+  let certs = certsBySession.get(session);
+  if (!certs) {
+    certs = new Map();
+    certsBySession.set(session, certs);
+    session.setCertificateVerifyProc((req, cb) => {
+      certs.set(req.hostname, { cert: req.certificate, result: req.verificationResult });
+      if (certs.size > 2000) certs.delete(certs.keys().next().value);
+      cb(-3);
+    });
+  }
+  return certs;
+}
+
+function setupSiteInfo({ win, id, tabs, session, settings, adblock, certExceptions, permDecisions, pushState }) {
+  const certs = certsFor(session);
 
   const activeUrl = () => {
     const a = tabs.active;
@@ -92,7 +103,7 @@ function setupSiteInfo({ win, tabs, session, settings, adblock, certExceptions, 
     return out;
   }
 
-  const bubble = new Bubble({ win, name: 'sib', file: 'siteinfo-bubble.html', width: 370, align: 'left' });
+  const bubble = new Bubble({ win, name: `sib${id}`, file: 'siteinfo-bubble.html', width: 370, align: 'left' });
   const refresh = async () => { if (bubble.visible) bubble.send('data', await data()); };
   bubble.on('ready', refresh);
 

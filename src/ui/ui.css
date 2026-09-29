@@ -226,3 +226,46 @@ body.tabs-bottom #bmbar { padding: 2px 8px; background: var(--bar); border-botto
 #update:hover { filter: brightness(1.08); }
 #update svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; }
 @media (prefers-color-scheme: dark) { #update { background: #22c55e; color: #0b1a10; } }
+
+/* ----- priblíženie (lupa v adresnom riadku) ----- */
+#zoom { display: inline-flex; align-items: center; gap: 3px; height: 24px; padding: 0 7px 0 5px; border-radius: 12px; border: 0;
+  background: transparent; color: var(--muted); font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; flex: none; }
+#zoom[hidden] { display: none; }
+#zoom:hover { background: var(--tab-hover); color: var(--text); }
+#zoom svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+/* ----- okno inkognito ----- */
+html.incognito {
+  --bg: #231b33; --bar: #2f2544; --tab-hover: #3a2f52; --tab-active: #2f2544;
+  --text: #ece7f7; --muted: #b3a8cc; --line: #463a61; --field: #1c1629; --accent: #a78bfa;
+  --ok: #4ade80; --off: #fb923c; --frozen: #7dd3fc; --panel: #2a2140;
+  color-scheme: dark;
+}
+html.incognito #ntp { --ntp-bg: #1c1629; }
+#incog { display: flex; align-items: center; gap: 6px; align-self: center; height: 26px; padding: 0 10px 0 8px; margin-right: 4px;
+  border-radius: 13px; background: #4c3a75; color: #efe9ff; font-size: 12px; font-weight: 600; flex: none; -webkit-app-region: drag; }
+#incog[hidden] { display: none; }
+#incog svg { width: 16px; height: 16px; }
+#ntpincog { display: flex; gap: 14px; max-width: 560px; padding: 14px 16px; border-radius: 12px; background: #2f2544; color: #d9d0ee;
+  font-size: 13px; line-height: 1.5; border: 1px solid #463a61; }
+#ntpincog[hidden] { display: none; }
+#ntpincog svg { width: 30px; height: 30px; flex: none; color: #c4b5fd; }
+#ntpincog b { display: block; color: #fff; font-size: 14px; margin-bottom: 2px; }
+
+/* ----- nebezpečná stránka (phishing / malvér) ----- */
+#danger { position: fixed; left: 0; right: 0; top: var(--top, 80px); bottom: var(--bottom, 0px); background: #b3261e; color: #fff;
+  display: flex; justify-content: center; overflow-y: auto; user-select: text; }
+#danger[hidden] { display: none; }
+.dg-inner { width: min(620px, 100% - 48px); padding: 13vh 0 40px; line-height: 1.55; font-size: 15px; }
+.dg-icon { width: 56px; height: 56px; stroke: none; margin-bottom: 18px; }
+#danger h1 { font-size: 27px; font-weight: 500; margin: 0 0 16px; }
+#danger p { margin: 0 0 12px; color: #fde8e6; }
+#danger p b { color: #fff; word-break: break-all; }
+#danger .dg-src { font-size: 12px; color: #f6c4bf; margin-bottom: 26px; }
+.dg-actions { display: flex; justify-content: space-between; gap: 12px; }
+.dg-btn { height: 36px; padding: 0 18px; border-radius: 18px; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.dg-pri { background: #fff; color: #b3261e; border: 0; }
+.dg-sec { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.55); }
+.dg-sec:hover { background: rgba(255,255,255,.1); }
+#dgdetail { margin-top: 26px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.3); }
+#dgproceed { color: #fff; font-size: 14px; }

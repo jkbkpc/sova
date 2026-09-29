@@ -48,6 +48,11 @@ if ($NewToken -or -not (Test-Path $tokenFile)) {
 $token = Unprotect-Text ([IO.File]::ReadAllText($tokenFile))
 
 # ---------------------------------------------------------------- verzia + git
+# GitHub mohol medzitým sám vydať bezpečnostnú aktualizáciu – najprv stiahneme jeho zmeny
+Step 'Sťahujem zmeny z GitHubu'
+git pull --rebase --autostash; Check 'git pull'
+$current = (Get-Content package.json -Raw | ConvertFrom-Json).version
+if ([version]$Version -le [version]$current) { throw "Nová verzia $Version musí byť vyššia ako súčasná $current (GitHub medzitým vydal novšiu)" }
 Step "Verzia $current -> $Version"
 npm version $Version --no-git-tag-version | Out-Null; Check 'npm version'
 $msg = if ($Message) { "Verzia ${Version}: $Message" } else { "Verzia $Version" }

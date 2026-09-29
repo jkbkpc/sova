@@ -1,0 +1,60 @@
+# Zostavenie a vydanie novej verzie Sovy na GitHub Releases (Windows).
+# Spúšťa ho workflow security-update po záplate Electronu; dá sa spustiť aj ručne
+# (Actions → Vydanie Sovy → Run workflow).
+name: Vydanie Sovy
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Popis vydania"
+        required: false
+        default: "Vydanie z GitHubu"
+  workflow_call:
+    inputs:
+      reason:
+        type: string
+        required: false
+        default: "Bezpečnostná aktualizácia Electronu"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Závislosti
+        run: npm ci
+
+      - name: Nová verzia (patch)
+        shell: bash
+        env:
+          REASON: ${{ inputs.reason }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          git commit -am "Verzia $VERSION: $REASON"
+          git push origin HEAD:main
+
+      - name: Zostavenie a nahranie vydania
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run release

@@ -11,12 +11,13 @@ const path = require('path');
 const fs = require('fs');
 const { WebContentsView, Menu, clipboard, app } = require('electron');
 const { parse } = require('tldts-experimental');
+const { ZoomStore } = require('./zoom');
 
 // Nová karta je interná stránka sova://newtab – v adresnom riadku sa nezobrazuje
 const NEWTAB_URL = 'sova://newtab/';
 
 class TabManager {
-  constructor({ win, session, settings, adblock, history, onChange, shortcut, getTopInset, getBottomInset, ui, focusAddress }) {
+  constructor({ win, session, settings, adblock, history, onChange, shortcut, getTopInset, getBottomInset, ui, focusAddress, zoom, incognito = false, guard = null }) {
     this.win = win;
     this.session = session;
     this.settings = settings;
@@ -35,7 +36,9 @@ class TabManager {
     this.fullscreen = false;
     this.memory = new Map(); // pid -> MB
 
-    this.sessionFile = path.join(app.getPath('userData'), 'session.json');
+    this.incognito = incognito;
+    this.guard = guard;                               // ochrana pred nebezpečnými stránkami: url → nález alebo null                       // inkognito: bez histórie, relácie a ukladania priblíženia
+    this.zoom = zoom || new ZoomStore(incognito ? null : app.getPath('userData'));
     // pravidelná kontrola: uspávanie dlho neaktívnych kariet + meranie RAM
     this.ticker = setInterval(() => this.tick(), 15000);
     this.memTicker = setInterval(() => this.measure(), 2000);
@@ -83,6 +86,9 @@ class TabManager {
 
     if (!restore && this.isInternal(tab.url)) {
       tab.state = 'blank';
+    } else if (!restore && this.dangerFor(tab.url)) {
+      tab.state = 'blank';                            // nebezpečná stránka – nenačítame, ukážeme varovanie
+      this.showDanger(tab, this.dangerFor(tab.url), tab.url);
     } else if (!restore) {
       this.createView(tab);
       tab.view.webContents.loadURL(tab.url).catch(() => {});
@@ -106,6 +112,7 @@ class TabManager {
         nodeIntegration: false,
         backgroundThrottling: true,
         spellcheck: false,
+        plugins: true,           // vstavaný prehliadač PDF (Chromium)
       },
     });
     view.setBackgroundColor('#ffffff');
@@ -130,6 +137,10 @@ class TabManager {
     wc.on('did-stop-loading', () => { tab.loading = false; this.onChange(); });
     wc.on('did-start-navigation', (d) => {
       if (d.isMainFrame && !d.isSameDocument) {
+        // poistka pre navigácie, ktoré neprešli cez will-navigate (späť/dopredu, obnovenie…)
+        const bad = this.dangerFor(d.url);
+        if (bad) { setImmediate(() => { if (!wc.isDestroyed()) wc.stop(); this.showDanger(tab, bad, d.url); }); return; }
+        if (tab.danger) this.clearDanger(tab);
         this.adblock.resetCount(wc.id); tab.favicon = null; tab.navStart = d.url;
         if (tab.certError) this.clearCertError(tab);
       }
@@ -140,6 +151,12 @@ class TabManager {
       this.onChange();
     };
     wc.on('did-navigate', onNav);
+    // priblíženie zapamätané pre doménu; Ctrl + koliesko myši
+    wc.on('did-navigate', (_e, url) => {
+      const f = this.zoom.get(url);
+      if (Math.abs(wc.getZoomFactor() - f) > 0.001) wc.setZoomFactor(f);
+    });
+    wc.on('zoom-changed', (_e, dir) => this.zoomStep(dir === 'in' ? 1 : -1, tab));
     wc.on('did-navigate-in-page', onNav);
     // história – obnovenie uspanej karty sa nepočíta ako nová návšteva
     const record = (url) => {
@@ -166,6 +183,16 @@ class TabManager {
       return { action: 'deny' };
     });
 
+    // odkaz alebo presmerovanie na nebezpečnú stránku – zastavíme ešte pred odoslaním požiadavky
+    const guardNav = (e, url, isMainFrame = true) => {
+      const target = e?.url || url;
+      if (!isMainFrame || e?.isMainFrame === false) return;
+      const bad = this.dangerFor(target);
+      // zmenu okna (skrytie stránky) robíme až po udalosti – počas nej by Chromium mohol spadnúť
+      if (bad) { e.preventDefault(); setImmediate(() => this.showDanger(tab, bad, target)); }
+    };
+    wc.on('will-navigate', (e, url) => guardNav(e, url));
+    wc.on('will-redirect', (e, url, _inPlace, isMainFrame) => guardNav(e, url, isMainFrame));
     wc.on('before-input-event', (e, input) => { if (this.shortcut(input)) e.preventDefault(); });
     const keepAddressFocus = () => {
       if (tab.addressFocusUntil > Date.now() && tab.id === this.activeId && this.isInternal(tab.url)) this.focusAddress();
@@ -190,12 +217,12 @@ class TabManager {
     clearTimeout(tab.freezeTimer);
 
     const blank = this.isBlank(tab);
-    if (!tab.view && !blank) this.wake(tab);
+    if (!tab.view && !blank && !tab.danger) this.wake(tab);
     else if (tab.state === 'frozen') this.setLifecycle(tab, 'active');
     else if (tab.crashed) tab.view.webContents.reload();
     tab.state = 'active';
 
-    if (tab.view && !tab.certError) {
+    if (tab.view && !tab.certError && !tab.danger) {
       this.win.contentView.addChildView(tab.view);
       this.layout();
     } else if (tab.view) this.win.contentView.removeChildView(tab.view);
@@ -361,6 +388,64 @@ class TabManager {
     this.onChange();
   }
 
+  // Ctrl+Shift+PgUp/PgDn – posunie aktívnu kartu o miesto (v rámci pripnutých / nepripnutých)
+  moveActive(dir) {
+    const t = this.active;
+    if (!t) return;
+    this.move(t.id, this.tabs.indexOf(t) + dir);
+  }
+
+  // ---------------------------------------------------------- priblíženie
+  zoomStep(dir, tab = this.active) {
+    const wc = tab?.view?.webContents;
+    if (!wc || wc.isDestroyed()) return;
+    const f = dir === 0 ? 1 : ZoomStore.next(wc.getZoomFactor(), dir);
+    wc.setZoomFactor(f);
+    this.zoom.set(wc.getURL(), f);
+    this.zoomPulse = (this.zoomPulse || 0) + 1;      // lišta ukáže bublinu s percentami
+    this.onChange();
+  }
+
+  // ---------------------------------------------------------- nebezpečná stránka (phishing / malvér)
+  dangerFor(url) { try { return this.guard ? this.guard(url) : null; } catch { return null; } }
+  showDanger(tab, info, url) {
+    tab.danger = { ...info, url };
+    if (tab.id === this.activeId && tab.view) this.win.contentView.removeChildView(tab.view);
+    if (tab.id === this.activeId) this.ui.send('activated', url);
+    this.onChange();
+  }
+  clearDanger(tab) {
+    delete tab.danger;
+    if (tab.id === this.activeId && tab.view && !tab.certError) { this.win.contentView.addChildView(tab.view); this.layout(); }
+    this.onChange();
+  }
+  // „Späť do bezpečia“: ostane stránka, ktorá bola otvorená predtým (nebezpečná sa nenačítala)
+  dangerBack(tab = this.active) {
+    if (!tab?.danger) return;
+    const cur = tab.view && !tab.view.webContents.isDestroyed() ? tab.view.webContents.getURL() : '';
+    if (cur && !this.isInternal(cur) && cur !== tab.danger.url) {
+      tab.url = cur;
+      this.clearDanger(tab);
+      this.ui.send('activated', cur);
+    } else {
+      delete tab.danger;
+      this.navigate('');
+    }
+  }
+  // „Pokračovať (nebezpečné)“
+  dangerProceed(tab = this.active, allow) {
+    if (!tab?.danger) return;
+    const { url, host } = tab.danger;
+    allow?.(host);
+    delete tab.danger;
+    if (!tab.view) { this.createView(tab); if (tab.id === this.activeId) { this.win.contentView.addChildView(tab.view); this.layout(); } }
+    else if (tab.id === this.activeId) { this.win.contentView.addChildView(tab.view); this.layout(); }
+    tab.state = tab.id === this.activeId ? 'active' : tab.state;
+    tab.url = url;
+    tab.view.webContents.loadURL(url).catch(() => {});
+    this.onChange();
+  }
+
   // ---------------------------------------------------------- neplatný certifikát
   // Stránka sa nenačíta; namiesto nej lišta prehliadača ukáže upozornenie (adresa ostáva v adresnom riadku)
   showCertError(tab, info) {
@@ -428,6 +513,8 @@ class TabManager {
       this.layout();
     }
     tab.url = url;
+    const bad = this.dangerFor(url);
+    if (bad) { this.showDanger(tab, bad, url); return; }
     tab.view.webContents.loadURL(url).catch(() => {});
     tab.view.webContents.focus();
   }
@@ -460,6 +547,8 @@ class TabManager {
     if (p.linkURL) {
       items.push(
         { label: 'Otvoriť odkaz v novej karte', click: () => this.create(p.linkURL, { background: true, afterActive: true }) },
+        { label: 'Otvoriť odkaz v novom okne', click: () => this.newWindow?.(p.linkURL, false) },
+        { label: 'Otvoriť odkaz v okne inkognito', click: () => this.newWindow?.(p.linkURL, true) },
         { label: 'Kopírovať adresu odkazu', click: () => clipboard.writeText(p.linkURL) },
         { type: 'separator' });
     }
@@ -497,6 +586,7 @@ class TabManager {
       { label: t.pinned ? 'Odopnúť kartu' : 'Pripnúť kartu', click: () => this.togglePin(id) },
       { type: 'separator' },
       { label: 'Nová karta', click: () => this.create() },
+      { label: 'Presunúť do nového okna', enabled: this.tabs.length > 1 && !this.isInternal(t.url), click: () => { this.newWindow?.(t.url, this.incognito); this.close(id); } },
       { label: 'Obnoviť', enabled: !!t.view, click: () => t.view?.webContents.reload() },
       { label: 'Duplikovať', click: () => this.duplicate(id) },
       { label: t.muted ? 'Zapnúť zvuk' : 'Stlmiť kartu', click: () => this.toggleMute(id) },
@@ -547,6 +637,9 @@ class TabManager {
       totalMemMB: Math.round(this.totalMem || 0),
       activeBlank: !!a && this.isBlank(a),
       certError: a?.certError ? { host: a.certError.host, error: a.certError.error } : null,
+      danger: a?.danger ? { host: a.danger.host, kind: a.danger.kind, list: a.danger.list, url: a.danger.url } : null,
+      zoom: wc && !wc.isDestroyed() ? Math.round(wc.getZoomFactor() * 100) : 100,
+      zoomPulse: this.zoomPulse || 0,
       adblock: this.adblock.enabled,
       adblockTotal: this.adblock.total,
       siteAllowlisted: a && /^https?:/i.test(a.url) ? this.adblock.isAllowlisted(a.url) : false,
@@ -554,9 +647,9 @@ class TabManager {
     };
   }
 
-  // ---------------------------------------------------------- uloženie relácie
-  saveSession() {
-    const data = {
+  // ---------------------------------------------------------- uloženie relácie (karty tohto okna)
+  serialize() {
+    return {
       active: this.tabs.indexOf(this.active),
       tabs: this.tabs.map((t) => {
         let history = t.history, historyIndex = t.historyIndex;
@@ -566,12 +659,10 @@ class TabManager {
         return { url: t.url, title: t.title, favicon: t.favicon, muted: t.muted, pinned: !!t.pinned, history, historyIndex };
       }),
     };
-    try { fs.writeFileSync(this.sessionFile, JSON.stringify(data)); } catch (e) { console.error(e); }
   }
 
-  restoreSession() {
-    let data;
-    try { data = JSON.parse(fs.readFileSync(this.sessionFile, 'utf8')); } catch { return false; }
+  restore(data) {
+    if (!data) return false;
     // prázdne „Nové karty“ sa neobnovujú
     const list = (data.tabs || []).filter((t) => t.url && !this.isInternal(t.url));
     // všetky karty sa vytvoria uspaté – nenačítajú sa, kým na ne neklikneš
@@ -582,6 +673,7 @@ class TabManager {
   destroy() {
     clearInterval(this.ticker);
     clearInterval(this.memTicker);
+    this.destroyed = true;
   }
 }
 
