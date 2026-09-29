@@ -255,6 +255,7 @@ function openWindow({ incognito = false, url = null, from = null, restore = null
 // ---------------------------------------------------------------------- štart
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null);
+  if (process.platform === 'win32') app.setAppUserModelId('sk.lunys.sova');   // upozornenia Windows patria Sove
   nativeTheme.themeSource = 'system';
   settings = new Settings(app.getPath('userData'));
 
@@ -298,6 +299,13 @@ app.whenReady().then(async () => {
     updating = true;
     saveSession('aktualizácia');
     for (const c of windows) if (!c.win.isDestroyed()) c.win.hide();   // okná zmiznú hneď
+    // inštalácia beží asi minútu bez okna – dáme vedieť, že sa Sova vráti sama
+    try {
+      const { Notification } = require('electron');
+      if (Notification.isSupported()) {
+        new Notification({ title: 'Sova sa aktualizuje', body: 'Nová verzia sa inštaluje. O chvíľu sa Sova sama otvorí aj s kartami.', silent: true }).show();
+      }
+    } catch {}
     try { fs.writeFileSync(path.join(app.getPath('userData'), 'update-restart'), '1'); } catch {}
   });
   updater.start();
@@ -423,6 +431,7 @@ app.whenReady().then(async () => {
   handle('settings:get', () => settings.all());
   handle('update:state', () => updater.state());
   handle('safe:state', () => safe.state());
+  handle('window:incognito', (c) => { openWindow({ incognito: true, from: c }); return true; });
   handle('safe:refresh', () => safe.refresh(true).then(() => safe.state()));
   handle('default:status', () => defaultBrowser.status());
   handle('default:set', () => defaultBrowser.makeDefault());

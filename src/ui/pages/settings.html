@@ -6,125 +6,154 @@
 <title>Nastavenia</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%232563eb%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12.22%202h-.44a2%202%200%200%200-2%202v.18a2%202%200%200%201-1%201.73l-.43.25a2%202%200%200%201-2%200l-.15-.08a2%202%200%200%200-2.73.73l-.22.38a2%202%200%200%200%20.73%202.73l.15.1a2%202%200%200%201%201%201.72v.51a2%202%200%200%201-1%201.74l-.15.09a2%202%200%200%200-.73%202.73l.22.38a2%202%200%200%200%202.73.73l.15-.08a2%202%200%200%201%202%200l.43.25a2%202%200%200%201%201%201.73V20a2%202%200%200%200%202%202h.44a2%202%200%200%200%202-2v-.18a2%202%200%200%201%201-1.73l.43-.25a2%202%200%200%201%202%200l.15.08a2%202%200%200%200%202.73-.73l.22-.39a2%202%200%200%200-.73-2.73l-.15-.08a2%202%200%200%201-1-1.74v-.5a2%202%200%200%201%201-1.74l.15-.09a2%202%200%200%200%20.73-2.73l-.22-.38a2%202%200%200%200-2.73-.73l-.15.08a2%202%200%200%201-2%200l-.43-.25a2%202%200%200%201-1-1.73V4a2%202%200%200%200-2-2z%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%223%22/%3E%3C/svg%3E">
 <link rel="stylesheet" href="common.css">
+<link rel="stylesheet" href="settings.css">
 </head>
 <body>
-<main class="page">
-  <h1><svg viewBox="0 0 24 24" style="stroke-width:1.8"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Nastavenia</h1>
-  <div class="card">
-    <h2>Šetrenie výkonu</h2>
-    <label class="row">
-      <span><b>Zmraziť neaktívnu kartu po</b><small>Zastaví JavaScript, animácie a vykresľovanie. Návrat je okamžitý.</small></span>
-      <select data-key="freezeDelaySec" data-num>
-        <option value="0">ihneď</option><option value="1">1 s</option><option value="3">3 s</option><option value="10">10 s</option>
-        <option value="30">30 s</option><option value="60">1 min</option>
-      </select>
-    </label>
-    <label class="row">
-      <span><b>Uspať kartu (uvoľniť RAM) po</b><small>Stránka sa zatvorí, ostane adresa, scroll aj vyplnené formuláre.</small></span>
-      <select data-key="discardAfterMin" data-num>
-        <option value="1">1 min</option><option value="5">5 min</option><option value="10">10 min</option>
-        <option value="30">30 min</option><option value="60">1 h</option><option value="0">nikdy</option>
-      </select>
-    </label>
-    <label class="row">
-      <span><b>Nezmrazovať karty, ktoré hrajú zvuk</b><small>Hudba, videá a hovory v pozadí pobežia ďalej.</small></span>
-      <input type="checkbox" data-key="keepAudibleAwake">
-    </label>
-    <label class="col">
-      <span><b>Nikdy neuspávať tieto domény</b><small>Jedna na riadok, napr. outlook.office.com alebo teams.microsoft.com</small></span>
-      <textarea data-key="neverSleep" data-list rows="3"></textarea>
-    </label>
-
-    <h2>Blokovanie reklám</h2>
-    <label class="row">
-      <span><b>Blokovať reklamy a sledovanie</b></span>
-      <input type="checkbox" data-key="adblock">
-    </label>
-    <label class="row">
-      <span><b>Úroveň</b><small>Plná úroveň skrýva aj cookie lišty a otravné prvky.</small></span>
-      <select data-key="adblockLevel">
-        <option value="ads">Reklamy + sledovanie</option><option value="full">Plná</option>
-      </select>
-    </label>
-    <label class="col">
-      <span><b>Výnimky (blokovanie vypnuté)</b><small>Jedna doména na riadok</small></span>
-      <textarea data-key="allowlist" data-list rows="3"></textarea>
-    </label>
-
-    <h2>Záložky</h2>
-    <label class="row">
-      <span><b>Zobrazovať lištu záložiek</b><small>Pod adresným riadkom. Rýchlo prepneš cez Ctrl+Shift+B.</small></span>
-      <input type="checkbox" data-key="showBookmarkBar">
-    </label>
-    <div class="row">
-      <span><b>Import záložiek</b><small>Z Chrome, Brave, Edge, Vivaldi, Opery alebo zo súboru HTML</small></span>
-      <span style="flex-direction:row;gap:8px"><a class="btn" href="sova://bookmarks/">Správca záložiek</a><a class="btn primary" href="sova://bookmarks/#import">Importovať</a></span>
+<div class="layout">
+  <aside id="side">
+    <h1><svg viewBox="0 0 24 24" style="stroke-width:1.8"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Nastavenia</h1>
+    <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="q" type="search" placeholder="Hľadať v nastaveniach" autocomplete="off" spellcheck="false"></div>
+    <nav id="nav"><a href="#vseobecne" data-sec="vseobecne"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span>Všeobecné</span></a><a href="#vzhlad" data-sec="vzhlad"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg><span>Vzhľad</span></a><a href="#zabezpecenie" data-sec="zabezpecenie"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Súkromie a zabezpečenie</span></a><a href="#reklamy" data-sec="reklamy"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg><span>Blokovanie reklám</span></a><a href="#vykon" data-sec="vykon"><svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span>Šetrenie výkonu</span></a><a href="#stahovanie" data-sec="stahovanie"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span>Sťahovanie</span></a><a href="#aktualizacie" data-sec="aktualizacie"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg><span>Aktualizácie a o Sove</span></a><a href="#skratky" data-sec="skratky"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg><span>Klávesové skratky</span></a></nav>
+  </aside>
+  <main id="content">
+  <section id="vseobecne" class="sec">
+    <h2><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Všeobecné</h2>
+    
+    <div class="card">
+      <div class="row">
+        <span><b>Predvolený prehliadač</b><small><span id="defstatus">…</span></small></span>
+        <button id="defbtn" class="btn primary">Nastaviť ako predvolený</button>
+      </div>
+      <label class="row">
+        <span><b>Vyhľadávač v adresnom riadku</b><small>Čo sa stane, keď do adresného riadku napíšeš text namiesto adresy.</small></span>
+        <select data-key="searchEngine"><option value="google">Google</option><option value="duckduckgo">DuckDuckGo</option><option value="bing">Bing</option></select>
+      </label>
+      <label class="row">
+        <span><b>Pri spustení obnoviť karty a okná</b><small>Karty sa obnovia uspaté, načíta sa len aktívna. Okná inkognito sa neobnovujú.</small></span>
+        <input type="checkbox" class="switch" data-key="restoreSession">
+      </label>
     </div>
-
-    <h2>Sťahovanie</h2>
-    <div class="row">
-      <span><b>Priečinok na stiahnuté súbory</b><small id="dldir">…</small></span>
-      <button id="pickdir" class="btn">Zmeniť…</button>
+  </section>
+  <section id="vzhlad" class="sec">
+    <h2><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>Vzhľad</h2>
+    
+    <div class="card">
+      <label class="row">
+        <span><b>Umiestnenie kariet</b><small>Dole: hore ostane adresný riadok a lišta záložiek, karty budú na spodku okna.</small></span>
+        <select data-key="tabsPosition"><option value="top">Hore (ako Chrome)</option><option value="bottom">Dole</option></select>
+      </label>
+      <label class="row">
+        <span><b>Zobrazovať lištu záložiek</b><small>Rýchlo ju prepneš cez Ctrl+Shift+B.</small></span>
+        <input type="checkbox" class="switch" data-key="showBookmarkBar">
+      </label>
+      <div class="row">
+        <span><b>Záložky</b><small>Správa, import z Chrome, Brave, Edge, Vivaldi, Opery alebo zo súboru HTML a export.</small></span>
+        <span class="btns"><a class="btn" href="sova://bookmarks/">Správca záložiek</a><a class="btn" href="sova://bookmarks/#import">Importovať</a></span>
+      </div>
     </div>
-    <label class="row">
-      <span><b>Pri každom sťahovaní sa spýtať, kam uložiť</b></span>
-      <input type="checkbox" data-key="askWhereToSave">
-    </label>
-
-    <h2>Zabezpečenie</h2>
-    <label class="row">
-      <span><b>Ochrana pred podvodnými a nebezpečnými stránkami</b><small>Varuje pred phishingom a stránkami so škodlivým softvérom a zablokuje sťahovanie z nich. Zoznamy (URLhaus, Phishing Army, CERT Polska, OpenPhish) sa aktualizujú každých 30 minút a kontrola prebieha len v počítači.</small></span>
-      <input type="checkbox" data-key="safeBrowsing">
-    </label>
-    <div class="row">
-      <span><b>Zoznamy nebezpečných stránok</b><small id="sbstatus">…</small></span>
-      <button id="sbbtn" class="btn">Aktualizovať teraz</button>
+  </section>
+  <section id="zabezpecenie" class="sec">
+    <h2><svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>Súkromie a zabezpečenie</h2>
+    <p class="desc">Kontrola nebezpečných stránok prebieha priamo v počítači – adresy, ktoré navštíviš, sa nikam neposielajú.</p>
+    <div class="card">
+      <label class="row">
+        <span><b>Ochrana pred podvodnými a nebezpečnými stránkami</b><small>Varuje pred phishingom a stránkami so škodlivým softvérom a zablokuje sťahovanie z nich.</small></span>
+        <input type="checkbox" class="switch" data-key="safeBrowsing">
+      </label>
+      <div class="row">
+        <span><b>Zoznamy nebezpečných stránok</b><small><span id="sbstatus">…</span></small></span>
+        <button id="sbbtn" class="btn">Aktualizovať teraz</button>
+      </div>
+      <div class="row">
+        <span><b>Vymazať údaje prehliadania</b><small>Cookies, cache a lokálne úložisko všetkých stránok (odhlási ťa zo stránok). Históriu mažeš v <a href="sova://history/">Histórii</a>.</small></span>
+        <button id="cleardata" class="btn danger">Vymazať</button>
+      </div>
+      <div class="row">
+        <span><b>Okno inkognito</b><small>Ctrl+Shift+N – história, cookies a údaje stránok sa po zatvorení okna zahodia.</small></span>
+        <button id="incog" class="btn">Otvoriť okno inkognito</button>
+      </div>
     </div>
-
-    <h2>Aktualizácie</h2>
-    <div class="row">
-      <span><b>Sova <span id="upver"></span></b><small id="upstatus">…</small></span>
-      <button id="upbtn" class="btn">Skontrolovať teraz</button>
+  </section>
+  <section id="reklamy" class="sec">
+    <h2><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></svg>Blokovanie reklám</h2>
+    <p class="desc">Zoznamy EasyList, EasyPrivacy a uBlock sa aktualizujú denne. Blokovanie pre jednu stránku vypneš aj kliknutím na štít v adresnom riadku.</p>
+    <div class="card">
+      <label class="row">
+        <span><b>Blokovať reklamy a sledovanie</b></span>
+        <input type="checkbox" class="switch" data-key="adblock">
+      </label>
+      <label class="row">
+        <span><b>Úroveň</b><small>Plná úroveň skrýva aj cookie lišty a otravné prvky.</small></span>
+        <select data-key="adblockLevel"><option value="ads">Reklamy + sledovanie</option><option value="full">Plná</option></select>
+      </label>
+      <label class="col">
+        <span><b>Výnimky – blokovanie vypnuté</b><small>Jedna doména na riadok.</small></span>
+        <textarea data-key="allowlist" data-list rows="3"></textarea>
+      </label>
     </div>
-    <label class="row">
-      <span><b>Automaticky sťahovať aktualizácie</b><small>Nová verzia sa stiahne na pozadí. Nainštaluje sa po kliknutí na zelené „Aktualizovať“ v lište alebo pri najbližšom zatvorení Sovy.</small></span>
-      <input type="checkbox" data-key="autoUpdate">
-    </label>
-
-    <h2>Všeobecné</h2>
-    <div class="row">
-      <span><b>Predvolený prehliadač</b><small id="defstatus">…</small></span>
-      <button id="defbtn" class="btn">Nastaviť ako predvolený</button>
+  </section>
+  <section id="vykon" class="sec">
+    <h2><svg viewBox="0 0 24 24"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg>Šetrenie výkonu</h2>
+    <p class="desc">Karty na pozadí sa najprv zmrazia (CPU ≈ 0 %) a neskôr uspia (uvoľní sa aj RAM). Po kliknutí sa obnovia aj s históriou a vyplnenými formulármi.</p>
+    <div class="card">
+      <label class="row">
+        <span><b>Zmraziť neaktívnu kartu po</b><small>Zastaví JavaScript, animácie a vykresľovanie. Návrat je okamžitý.</small></span>
+        <select data-key="freezeDelaySec" data-num><option value="0">ihneď</option><option value="1">1 s</option><option value="3">3 s</option><option value="10">10 s</option><option value="30">30 s</option><option value="60">1 min</option></select>
+      </label>
+      <label class="row">
+        <span><b>Uspať kartu (uvoľniť RAM) po</b><small>Stránka sa zatvorí, ostane adresa, scroll aj vyplnené formuláre.</small></span>
+        <select data-key="discardAfterMin" data-num><option value="1">1 min</option><option value="5">5 min</option><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 h</option><option value="0">nikdy</option></select>
+      </label>
+      <label class="row">
+        <span><b>Nezmrazovať karty, ktoré hrajú zvuk</b><small>Hudba, videá a hovory v pozadí pobežia ďalej.</small></span>
+        <input type="checkbox" class="switch" data-key="keepAudibleAwake">
+      </label>
+      <label class="col">
+        <span><b>Nikdy neuspávať tieto domény</b><small>Jedna na riadok, napr. outlook.office.com alebo teams.microsoft.com. Pridáš ich aj pravým tlačidlom na karte.</small></span>
+        <textarea data-key="neverSleep" data-list rows="3"></textarea>
+      </label>
     </div>
-    <label class="row">
-      <span><b>Umiestnenie kariet</b><small>Dole: hore ostane len adresný riadok, lišta záložiek a pod ňou karty budú na spodku okna.</small></span>
-      <select data-key="tabsPosition">
-        <option value="top">Hore (ako Chrome)</option><option value="bottom">Dole</option>
-      </select>
-    </label>
-    <label class="row">
-      <span><b>Vyhľadávač</b></span>
-      <select data-key="searchEngine">
-        <option value="google">Google</option><option value="duckduckgo">DuckDuckGo</option><option value="bing">Bing</option>
-      </select>
-    </label>
-    <label class="row">
-      <span><b>Pri spustení obnoviť karty</b><small>Karty sa obnovia uspaté, načíta sa len aktívna.</small></span>
-      <input type="checkbox" data-key="restoreSession">
-    </label>
-    <div class="row">
-      <span><b>Vymazať údaje prehliadania</b><small>Cookies, cache a lokálne úložisko všetkých stránok. Históriu mažeš v <a href="sova://history/">Histórii</a>.</small></span>
-      <button id="cleardata" class="btn">Vymazať</button>
+  </section>
+  <section id="stahovanie" class="sec">
+    <h2><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Sťahovanie</h2>
+    
+    <div class="card">
+      <div class="row">
+        <span><b>Priečinok na stiahnuté súbory</b><small><span id="dldir">…</span></small></span>
+        <button id="pickdir" class="btn">Zmeniť…</button>
+      </div>
+      <label class="row">
+        <span><b>Pri každom sťahovaní sa spýtať, kam uložiť</b></span>
+        <input type="checkbox" class="switch" data-key="askWhereToSave">
+      </label>
     </div>
-    <p class="hint"><b>Klávesové skratky</b><br>
-      Okná: Ctrl+N nové okno · Ctrl+Shift+N okno inkognito · Ctrl+Shift+W zavrieť okno (aj pravé tlačidlo na „+“)<br>
-      Karty: Ctrl+T nová · Ctrl+W zavrieť · Ctrl+Shift+T obnoviť zavretú · Ctrl+Tab / Ctrl+PgDn ďalšia · Ctrl+Shift+Tab / Ctrl+PgUp predchádzajúca · Ctrl+1…8 karta podľa poradia · Ctrl+9 posledná · Ctrl+Shift+PgUp/PgDn posunúť kartu<br>
-      Stránka: Ctrl+L / Alt+D / F6 adresa · Ctrl+Enter doplní www…com · F5 / Ctrl+R obnoviť · Ctrl+Shift+R bez cache · Esc zastaviť · Alt+←/→ späť/dopredu · Alt+Home nová karta · Ctrl+F hľadať · F3 / Ctrl+G ďalší výskyt · Ctrl+P tlačiť · Ctrl+S uložiť · Ctrl+U zdrojový kód · F11 celá obrazovka<br>
-      Priblíženie: Ctrl + koliesko · Ctrl + / Ctrl − · Ctrl+0 pôvodná veľkosť (pamätá sa pre každú stránku)<br>
-      Prehliadač: Ctrl+D záložka · Ctrl+Shift+B lišta záložiek · Ctrl+Shift+O správca záložiek · Ctrl+H história · Ctrl+Shift+Delete vymazať históriu · Ctrl+J stiahnuté súbory · Ctrl+, nastavenia · F12 / Ctrl+Shift+I / Ctrl+Shift+J vývojárske nástroje<br>
-      Pravé tlačidlo na karte ponúka „Uspať teraz“ a „Nikdy neuspávať“.</p>
-  </div>
-</main>
+  </section>
+  <section id="aktualizacie" class="sec">
+    <h2><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>Aktualizácie a o Sove</h2>
+    <p class="desc">Bezpečnostné záplaty Chromia vychádzajú automaticky – GitHub každý deň kontroluje nové verzie Electronu.</p>
+    <div class="card">
+      <div class="row">
+        <span><b>Sova <span id="upver"></span></b><small><span id="upstatus">…</span></small></span>
+        <button id="upbtn" class="btn">Skontrolovať teraz</button>
+      </div>
+      <label class="row">
+        <span><b>Automaticky sťahovať aktualizácie</b><small>Nová verzia sa stiahne na pozadí. Nainštaluje sa po kliknutí na zelené „Aktualizovať“ v lište alebo pri najbližšom zatvorení Sovy.</small></span>
+        <input type="checkbox" class="switch" data-key="autoUpdate">
+      </label>
+      <div class="row">
+        <span><b>Zdrojový kód a vydania</b><small>github.com/jkbkpc/sova</small></span>
+        <a class="btn" href="https://github.com/jkbkpc/sova/releases" target="_blank">Otvoriť</a>
+      </div>
+    </div>
+  </section>
+  <section id="skratky" class="sec">
+    <h2><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Klávesové skratky</h2>
+    <p class="desc">Pravé tlačidlo na karte ponúka aj „Pripnúť“, „Uspať teraz“ a „Nikdy neuspávať“; pravé tlačidlo na „+“ nové okno alebo okno inkognito.</p>
+    <div class="card kcard"><div class="kgroup"><h3>Okná a karty</h3><div class="krow"><span>Nové okno</span><span class="keys"><kbd>Ctrl</kbd> <kbd>N</kbd></span></div><div class="krow"><span>Okno inkognito</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>N</kbd></span></div><div class="krow"><span>Zavrieť okno</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>W</kbd></span></div><div class="krow"><span>Nová karta</span><span class="keys"><kbd>Ctrl</kbd> <kbd>T</kbd></span></div><div class="krow"><span>Zavrieť kartu</span><span class="keys"><kbd>Ctrl</kbd> <kbd>W</kbd></span></div><div class="krow"><span>Obnoviť zavretú kartu</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>T</kbd></span></div><div class="krow"><span>Ďalšia / predchádzajúca karta</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Tab</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Tab</kbd></span></div><div class="krow"><span>Karta podľa poradia / posledná</span><span class="keys"><kbd>Ctrl</kbd> <kbd>1…8</kbd> / <kbd>Ctrl</kbd> <kbd>9</kbd></span></div><div class="krow"><span>Posunúť kartu</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>PgUp / PgDn</kbd></span></div></div><div class="kgroup"><h3>Stránka</h3><div class="krow"><span>Adresný riadok</span><span class="keys"><kbd>Ctrl</kbd> <kbd>L</kbd> / <kbd>Alt</kbd> <kbd>D</kbd> / <kbd>F6</kbd></span></div><div class="krow"><span>Doplniť www…com</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Enter</kbd></span></div><div class="krow"><span>Obnoviť / bez cache</span><span class="keys"><kbd>F5</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>R</kbd></span></div><div class="krow"><span>Zastaviť načítanie</span><span class="keys"><kbd>Esc</kbd></span></div><div class="krow"><span>Späť / dopredu</span><span class="keys"><kbd>Alt</kbd> <kbd>←</kbd> / <kbd>Alt</kbd> <kbd>→</kbd></span></div><div class="krow"><span>Hľadať na stránke / ďalší výskyt</span><span class="keys"><kbd>Ctrl</kbd> <kbd>F</kbd> / <kbd>F3</kbd></span></div><div class="krow"><span>Tlačiť</span><span class="keys"><kbd>Ctrl</kbd> <kbd>P</kbd></span></div><div class="krow"><span>Uložiť stránku</span><span class="keys"><kbd>Ctrl</kbd> <kbd>S</kbd></span></div><div class="krow"><span>Zdrojový kód</span><span class="keys"><kbd>Ctrl</kbd> <kbd>U</kbd></span></div><div class="krow"><span>Celá obrazovka</span><span class="keys"><kbd>F11</kbd></span></div></div><div class="kgroup"><h3>Priblíženie</h3><div class="krow"><span>Priblížiť / oddialiť</span><span class="keys"><kbd>Ctrl</kbd> <kbd>+</kbd> / <kbd>Ctrl</kbd> <kbd>−</kbd> alebo <kbd>Ctrl</kbd> + koliesko</span></div><div class="krow"><span>Pôvodná veľkosť</span><span class="keys"><kbd>Ctrl</kbd> <kbd>0</kbd></span></div></div><div class="kgroup"><h3>Prehliadač</h3><div class="krow"><span>Pridať záložku</span><span class="keys"><kbd>Ctrl</kbd> <kbd>D</kbd></span></div><div class="krow"><span>Lišta záložiek</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>B</kbd></span></div><div class="krow"><span>Správca záložiek</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>O</kbd></span></div><div class="krow"><span>História</span><span class="keys"><kbd>Ctrl</kbd> <kbd>H</kbd></span></div><div class="krow"><span>Vymazať históriu</span><span class="keys"><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Delete</kbd></span></div><div class="krow"><span>Stiahnuté súbory</span><span class="keys"><kbd>Ctrl</kbd> <kbd>J</kbd></span></div><div class="krow"><span>Nastavenia</span><span class="keys"><kbd>Ctrl</kbd> <kbd>,</kbd></span></div><div class="krow"><span>Vývojárske nástroje</span><span class="keys"><kbd>F12</kbd></span></div></div></div>
+  </section>
+    <p id="nothing" hidden>Nič sa nenašlo.</p>
+  </main>
+</div>
 <div class="toast" id="toast">Uložené</div>
 <script src="settings.js"></script>
 </body>

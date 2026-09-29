@@ -131,3 +131,59 @@ async function renderSafe() {
 sbBtn.addEventListener('click', async () => { sbBtn.disabled = true; await api.invoke('safe:refresh'); renderSafe(); });
 api.on('safe:changed', renderSafe);
 renderSafe();
+
+// ---------------------------------------------------------------- bočné menu a hľadanie
+const secs = [...document.querySelectorAll('.sec')];
+const navLinks = [...document.querySelectorAll('#nav a')];
+function spy() {
+  let cur = secs.find((s) => !s.hidden) || secs[0];
+  for (const s of secs) if (!s.hidden && s.getBoundingClientRect().top <= 90) cur = s;
+  // na konci stránky vyznačíme posledný viditeľný oddiel
+  if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) cur = [...secs].reverse().find((s) => !s.hidden) || cur;
+  for (const a of navLinks) a.classList.toggle('on', a.dataset.sec === cur?.id);
+}
+window.addEventListener('scroll', spy, { passive: true });
+for (const a of navLinks) {
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const s = document.getElementById(a.dataset.sec);
+    if (!s || s.hidden) return;
+    s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    history.replaceState(null, '', '#' + a.dataset.sec);
+  });
+}
+if (location.hash) requestAnimationFrame(() => document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' }));
+spy();
+
+const plain = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const squash = (s) => s.replace(/[\s+]/g, '');            // „ctrl+d“ nájde aj skratku Ctrl D
+document.getElementById('q').addEventListener('input', (e) => {
+  const q = plain(e.target.value.trim());
+  let any = false;
+  for (const s of secs) {
+    const title = plain(s.querySelector('h2').textContent);
+    const rows = [...s.querySelectorAll('.row, .col, .krow')];
+    let hits = 0;
+    for (const r of rows) {
+      const t = plain(r.textContent);
+      const show = !q || title.includes(q) || t.includes(q) || squash(t).includes(squash(q));
+      r.hidden = !show;
+      if (show) hits++;
+    }
+    for (const g of s.querySelectorAll('.kgroup')) g.hidden = ![...g.querySelectorAll('.krow')].some((r) => !r.hidden);
+    s.hidden = !!q && !hits;
+    if (!s.hidden) any = true;
+    navLinks.find((a) => a.dataset.sec === s.id)?.classList.toggle('off', s.hidden);
+  }
+  document.getElementById('nothing').hidden = any;
+  if (q) window.scrollTo(0, 0);
+  spy();
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey && e.key.toLowerCase() === 'f') || (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA')) {
+    e.preventDefault();
+    document.getElementById('q').focus();
+  }
+});
+
+document.getElementById('incog').addEventListener('click', () => api.invoke('window:incognito'));
