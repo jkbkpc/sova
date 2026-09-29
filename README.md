@@ -49,6 +49,19 @@ Ikona sťahovania ukazuje priebeh (krúžok) a nové stiahnuté súbory (bodka);
 sťahovania ukáže sama. Všetky sťahovania sú na karte `sova://downloads` (Ctrl+J). Priečinok a „spýtať sa kam uložiť“
 sú v Nastaveniach.
 
+## Aktualizácie
+
+Nainštalovaná verzia (Setup) si každé 4 hodiny skontroluje GitHub Releases (`jkbkpc/sova`). Novú verziu stiahne na pozadí,
+v lište sa ukáže zelené **Aktualizovať** (reštart s obnovením kariet) a inak sa nainštaluje pri najbližšom zatvorení Sovy.
+Prenosná verzia len upozorní „Nová verzia“ a otvorí stránku so stiahnutím. Stav a ručná kontrola sú v Nastaveniach.
+
+Vydanie novej verzie: zvýš `version` v `package.json`, potom
+
+```
+$env:GH_TOKEN="<token>"; $env:NODE_OPTIONS="--use-system-ca"
+npm run release           # zostaví Setup + Portable a nahrá ich ako GitHub Release v<verzia>
+```
+
 ## Vývoj
 
 ```
@@ -58,4 +71,4 @@ npm run dist              # Windows build (portable .exe) do priečinka dist/
 ```
 
 Kód: `src/main.js` (okno, skratky, oprávnenia), `src/tabs.js` (karty, zmrazovanie, uspávanie),
-`src/adblock.js` (blokovanie), `src/history.js` (história, návrhy), `src/bookmarks.js` + `src/bookmarks-ui.js` + `src/favicons.js` + `src/bmpopover.js` (záložky), `src/suggest.js` (zoznam návrhov), `src/downloads.js` + `src/tools-ui.js` + `src/netstats.js` + `src/speedtest.js` (sťahovanie, vyťaženie, test rýchlosti), `src/bubble.js` (bubliny v lište), `src/ui/` (rozhranie), `src/ui/pages/` (interné stránky sova://). Nastavenia a relácia sú v `%APPDATA%\Sova`.
+`src/adblock.js` (blokovanie), `src/history.js` (história, návrhy), `src/bookmarks.js` + `src/bookmarks-ui.js` + `src/favicons.js` + `src/bmpopover.js` (záložky), `src/suggest.js` (zoznam návrhov), `src/downloads.js` + `src/tools-ui.js` + `src/netstats.js` + `src/speedtest.js` (sťahovanie, vyťaženie, test rýchlosti), `src/bubble.js` (bubliny v lište), `src/updater.js` (aktualizácie), `src/windowstate.js` (poloha okna), `src/ui/` (rozhranie), `src/ui/pages/` (interné stránky sova://). Nastavenia a relácia sú v `%APPDATA%\Sova`.

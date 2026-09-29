@@ -174,8 +174,22 @@ function renderToolbar() {
 
 api.on('state', (s) => {
   state = s; applyLayout(s.tabsPosition || 'top');
-  renderTabs(); renderToolbar(); renderBookmarks(); renderDownloads(); renderNtp(); renderCert();
+  renderTabs(); renderToolbar(); renderBookmarks(); renderDownloads(); renderNtp(); renderCert(); renderUpdate();
 });
+
+// ------------------------------------------------------------ aktualizácia
+function renderUpdate() {
+  const u = state.update || {};
+  const b = $('#update');
+  const show = u.status === 'ready' || u.status === 'portable';
+  b.hidden = !show;
+  if (!show) return;
+  b.querySelector('span').textContent = u.status === 'ready' ? 'Aktualizovať' : 'Nová verzia';
+  b.title = u.status === 'ready'
+    ? `Sova ${u.newVersion} je pripravená.\nKlikni pre reštart a inštaláciu – otvorené karty sa obnovia.\nInak sa nainštaluje pri najbližšom zatvorení Sovy.`
+    : `Na GitHube je Sova ${u.newVersion}.\nKlikni pre otvorenie stránky so stiahnutím.`;
+}
+$('#update').addEventListener('click', () => api.send('update:install'));
 
 // ------------------------------------------------------------ neplatný certifikát
 const CERT_REASON = {

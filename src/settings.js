@@ -17,6 +17,7 @@ const DEFAULTS = {
   tabsPosition: 'top',      // 'top' = karty hore (ako Chrome), 'bottom' = adresa hore, karty a záložky dole
   downloadDir: '',          // priečinok na stiahnuté súbory ('' = Stiahnuté/Downloads)
   askWhereToSave: false,    // pri každom sťahovaní sa spýtať, kam uložiť
+  autoUpdate: true,         // nové verzie Sovy sťahovať automaticky na pozadí
 };
 
 const SEARCH = {

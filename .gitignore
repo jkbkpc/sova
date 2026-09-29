@@ -3,3 +3,4 @@ dist/
 test/*.png
 test/results.txt
 resources/*.bin
+test/site/updates/

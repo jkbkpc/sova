@@ -218,3 +218,11 @@ body.tabs-bottom #bmbar { padding: 2px 8px; background: var(--bar); border-botto
 #tabs.dragging .tab:not(.drag) { transition: transform .15s ease; }
 .tab.drag { z-index: 5; background: var(--tab-active); box-shadow: 0 2px 8px rgba(0,0,0,.18); cursor: grabbing; }
 .tab.drag::before, .tab.drag + .tab::before { display: none; }
+
+/* ----- pripravená aktualizácia (ako „Aktualizovať“ v Chrome) ----- */
+#update { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 11px 0 8px; border-radius: 13px; border: 0;
+  background: #16a34a; color: #fff; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; flex: none; margin: 0 2px; }
+#update[hidden] { display: none; }
+#update:hover { filter: brightness(1.08); }
+#update svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; }
+@media (prefers-color-scheme: dark) { #update { background: #22c55e; color: #0b1a10; } }

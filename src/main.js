@@ -14,6 +14,7 @@ const { setupBookmarks } = require('./bookmarks-ui');
 const { Downloads } = require('./downloads');
 const { setupTools } = require('./tools-ui');
 const { setupSiteInfo } = require('./siteinfo');
+const { Updater } = require('./updater');
 
 // Stránky ako Google/Microsoft niekedy blokujú „Electron“ v User-Agente – odstránime ho,
 // aby sa prehliadač hlásil ako bežný Chrome.
@@ -38,8 +39,8 @@ function serveInternal(req) {
   return new Response(fs.readFileSync(full), { headers: { 'content-type': MIME[path.extname(full)] || 'application/octet-stream' } });
 }
 
-let win, tabs, settings, adblock, history, suggest, bookmarks, popover, bmui, downloads, tools, siteinfo;
-let topInset = 80, bottomInset = 0;
+let win, tabs, settings, adblock, history, suggest, bookmarks, popover, bmui, downloads, tools, siteinfo, updater;
+let topInset = 80, bottomInset = 0, updating = false;
 const certExceptions = new Set();
 const permDecisions = new Map();
 
@@ -131,7 +132,7 @@ function pushState() {
     pending = null;
     if (!win.isDestroyed()) {
       win.webContents.send('state', { ...tabs.snapshot(), ...(bmui ? bmui.state() : {}), ...(tools ? tools.state() : {}),
-        ...(siteinfo ? siteinfo.state() : {}), tabsPosition: settings.get('tabsPosition') });
+        ...(siteinfo ? siteinfo.state() : {}), update: updater?.state(), tabsPosition: settings.get('tabsPosition') });
     }
   }, 60);
 }
@@ -220,7 +221,27 @@ app.whenReady().then(async () => {
   // informácie o stránke (zámok v adresnom riadku)
   siteinfo = setupSiteInfo({ win, tabs, session: browsing, settings, adblock, certExceptions, permDecisions, pushState });
   ipcMain.on('site:info', (_e, rect) => siteinfo.toggle(rect));
-  Object.assign(module.exports, { bookmarks, bmui, popover, downloads, tools, siteinfo });
+  // automatické aktualizácie (len v nainštalovanej/prenosnej verzii; SOVA_UPDATE_FEED = test)
+  updater = new Updater({ settings, testFeed: process.env.SOVA_UPDATE_FEED });
+  updater.on('change', () => {
+    pushState();
+    for (const w of require('electron').webContents.getAllWebContents()) {
+      if (!w.isDestroyed() && w.getURL().startsWith('sova://settings')) w.send('internal:update:changed');
+    }
+  });
+  // reštart kvôli aktualizácii: karty sa po nej obnovia vždy (aj keď je obnovenie relácie vypnuté)
+  updater.on('before-install', () => {
+    updating = true;
+    tabs.saveSession();
+    try { fs.writeFileSync(path.join(app.getPath('userData'), 'update-restart'), '1'); } catch {}
+  });
+  updater.start();
+  ipcMain.on('update:install', () => {
+    const s = updater.state();
+    if (s.status === 'ready') updater.install();
+    else if (s.status === 'portable') tabs.create(s.releaseUrl, { afterActive: true });
+  });
+  Object.assign(module.exports, { bookmarks, bmui, popover, downloads, tools, siteinfo, updater });
   // klik mimo bubliny záložky ju uloží a zavrie
   const focusElsewhere = (wc) => {
     popover.onFocusElsewhere(wc); bmui.menu.onFocusElsewhere(wc); tools?.onFocusElsewhere(wc); siteinfo?.bubble.onFocusElsewhere(wc);
@@ -265,13 +286,16 @@ app.whenReady().then(async () => {
     if (cmd === 'browser-backward') wc?.navigationHistory.goBack();
     if (cmd === 'browser-forward') wc?.navigationHistory.goForward();
   });
-  win.on('close', () => { if (settings.get('restoreSession')) tabs.saveSession(); history.save(); bookmarks.save(); downloads.save(); });
+  win.on('close', () => { if (updating || settings.get('restoreSession')) tabs.saveSession(); history.save(); bookmarks.save(); downloads.save(); });
 
   // Karty až keď je UI načítané (poznáme výšku lišty)
   win.webContents.once('did-finish-load', () => {
     const argUrl = urlFromArgs(process.argv);
     // karty z minula sa obnovia uspaté (bez načítania) a aktívna bude nová prázdna karta
-    if (settings.get('restoreSession')) tabs.restoreSession();
+    const flag = path.join(app.getPath('userData'), 'update-restart');
+    const afterUpdate = fs.existsSync(flag);
+    if (afterUpdate) try { fs.unlinkSync(flag); } catch {}
+    if (afterUpdate || settings.get('restoreSession')) tabs.restoreSession();
     tabs.create(argUrl ? tabs.resolveInput(argUrl) : undefined);
     started = true;
     startupFocus();
@@ -331,6 +355,14 @@ app.whenReady().then(async () => {
     return fn(...a);
   });
   handle('settings:get', () => settings.all());
+  handle('update:state', () => updater.state());
+  handle('update:check', () => updater.check());
+  handle('update:download', () => updater.download());
+  handle('update:install', () => {
+    const s = updater.state();
+    if (s.status === 'portable') { tabs.create(s.releaseUrl, { afterActive: true }); return true; }
+    return updater.install();
+  });
   handle('settings:set', (patch) => { settings.set(patch); pushState(); return settings.all(); });
   handle('settings:pick-download-dir', async () => {
     const r = await dialog.showOpenDialog(win, {

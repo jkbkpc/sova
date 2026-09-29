@@ -6,13 +6,15 @@
   "scripts": {
     "start": "electron .",
     "build-adblock": "node scripts/build-adblock.js",
-    "dist": "npm run build-adblock && electron-builder --win portable nsis"
+    "dist": "npm run build-adblock && electron-builder --win portable nsis",
+    "release": "npm run build-adblock && electron-builder --win portable nsis --publish always"
   },
   "author": "Jakub",
   "license": "MIT",
   "dependencies": {
     "@ghostery/adblocker": "^2.18.2",
     "@ghostery/adblocker-electron": "^2.18.2",
+    "electron-updater": "^6.8.9",
     "tldts-experimental": "^7.4.16"
   },
   "devDependencies": {
@@ -51,6 +53,14 @@
     },
     "portable": {
       "artifactName": "Sova-Portable-${version}.${ext}"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "jkbkpc",
+        "repo": "sova",
+        "releaseType": "release"
+      }
+    ]
   }
 }
