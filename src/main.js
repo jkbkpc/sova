@@ -298,7 +298,12 @@ app.whenReady().then(async () => {
     if (cmd === 'browser-backward') wc?.navigationHistory.goBack();
     if (cmd === 'browser-forward') wc?.navigationHistory.goForward();
   });
-  win.on('close', () => { if (updating || settings.get('restoreSession')) tabs.saveSession(); history.save(); bookmarks.save(); downloads.save(); });
+  win.on('close', () => {
+    const t0 = Date.now();
+    if (updating || settings.get('restoreSession')) tabs.saveSession();
+    history.save(); bookmarks.save(); downloads.save();
+    log('okno sa zatvára, uložené za', Date.now() - t0, 'ms');
+  });
 
   // Karty až keď je UI načítané (poznáme výšku lišty)
   win.webContents.once('did-finish-load', () => {
@@ -427,4 +432,6 @@ app.on('second-instance', (_e, argv) => {
   else pendingUrls.push(u);                    // karty sa ešte obnovujú – otvoríme po nich
 });
 
-app.on('window-all-closed', () => { tabs?.destroy(); app.quit(); });
+app.on('window-all-closed', () => { log('všetky okná zatvorené'); tabs?.destroy(); app.quit(); });
+app.on('before-quit', () => log('ukončovanie'));
+app.on('quit', () => log('ukončené'));

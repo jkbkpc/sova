@@ -105,7 +105,7 @@ class Updater extends EventEmitter {
     if (this.s.status !== 'ready' || !this.u) return false;
     log('inštalácia aktualizácie', this.s.newVersion);
     this.emit('before-install');
-    setImmediate(() => this.u.quitAndInstall(true, true));
+    setImmediate(() => { log('spúšťam inštalátor'); this.u.quitAndInstall(true, true); });
     return true;
   }
 }
