@@ -55,6 +55,19 @@ app.whenReady().then(async () => {
   // predvolený prehliadač: pri npm start len vysvetlenie, bez tlačidla
   const def = await st.executeJavaScript("document.getElementById('defstatus').textContent + '|' + document.getElementById('defbtn').hidden");
   check('predvolený prehliadač: len v nainštalovanej verzii', /nainštalovanej/.test(def) && def.endsWith('|true'), def);
+  // opätovné spustenie Sovy: bez odkazu žiadna nová karta, s odkazom nová karta
+  const n0 = tabs.tabs.length;
+  app.emit('second-instance', {}, ['Sova.exe', '--updated']);
+  await sleep(300);
+  check('opätovné spustenie bez odkazu: bez prázdnej karty', tabs.tabs.length === n0, `${n0} → ${tabs.tabs.length}`);
+  app.emit('second-instance', {}, ['Sova.exe', 'http://news.test/counter.html?z=1']);
+  await sleep(300);
+  check('opätovné spustenie s odkazom: nová karta', tabs.tabs.length === n0 + 1 && tabs.active.url.includes('z=1'));
+  // pripnutá karta obnovená po obyčajnej ide medzi pripnuté (na začiatok)
+  const pt = tabs.create('http://news.test/counter.html?p=1', { background: true, restore: { pinned: true, url: 'http://news.test/counter.html?p=1', title: 'P' } });
+  check('obnovená pripnutá karta je pred nepripnutými', tabs.tabs[0] === pt, tabs.tabs.map((t) => (t.pinned ? 'P' : 'n')).join(''));
+  const logTxt = fs.readFileSync(path.join(tmp, 'sova.log'), 'utf8');
+  check('denník sova.log', /štart/.test(logTxt) && /second-instance/.test(logTxt) && /aktualizácia: ready/.test(logTxt));
   console.log(fails ? `\n${fails} FAIL` : '\nVŠETKO OK');
   app.exit(fails ? 1 : 0);
 });

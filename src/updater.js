@@ -4,6 +4,7 @@
 //  - prenosná verzia (Portable): len upozorní na novú verziu a otvorí stránku so stiahnutím
 const { app, net } = require('electron');
 const { EventEmitter } = require('events');
+const { log } = require('./log');
 
 const REPO = 'jkbkpc/sova';
 const FIRST_CHECK_MS = 15 * 1000;
@@ -59,6 +60,7 @@ class Updater extends EventEmitter {
   }
 
   set(patch) {
+    if (patch.status && patch.status !== this.s.status) log('aktualizácia:', patch.status, patch.newVersion || '', patch.error || '');
     Object.assign(this.s, patch);
     this.emit('change', this.state());
   }
@@ -101,6 +103,7 @@ class Updater extends EventEmitter {
   // reštart do novej verzie (inštalátor beží potichu a Sovu po inštalácii znova spustí)
   install() {
     if (this.s.status !== 'ready' || !this.u) return false;
+    log('inštalácia aktualizácie', this.s.newVersion);
     this.emit('before-install');
     setImmediate(() => this.u.quitAndInstall(true, true));
     return true;

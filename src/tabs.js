@@ -77,7 +77,8 @@ class TabManager {
     };
     if (restore) Object.assign(tab, restore);
     let idx = afterActive && this.active ? this.tabs.indexOf(this.active) + 1 : this.tabs.length;
-    if (!tab.pinned) idx = Math.max(idx, this.pinnedCount());   // nové karty nikdy medzi pripnuté
+    // nové karty nikdy medzi pripnuté; pripnutá (napr. pri obnovení relácie) vždy na koniec pripnutých
+    idx = tab.pinned ? Math.min(idx, this.pinnedCount()) : Math.max(idx, this.pinnedCount());
     this.tabs.splice(idx, 0, tab);
 
     if (!restore && this.isInternal(tab.url)) {

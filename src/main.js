@@ -23,7 +23,9 @@ app.userAgentFallback = app.userAgentFallback
   .replace(/\s?Electron\/\S+/i, '')
   .replace(new RegExp(`\\s?(${app.getName()}|sova)\\/\\S+`, 'ig'), '');
 
-if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
+const { log } = require('./log');
+if (!app.requestSingleInstanceLock()) { log('druhá inštancia – odovzdané bežiacej Sove', process.argv.slice(1)); app.quit(); process.exit(0); }
+log('štart', app.getVersion(), process.argv.slice(1));
 
 // Interné stránky prehliadača: sova://settings, sova://history
 protocol.registerSchemesAsPrivileged([{ scheme: 'sova', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
@@ -41,7 +43,7 @@ function serveInternal(req) {
 }
 
 let win, tabs, settings, adblock, history, suggest, bookmarks, popover, bmui, downloads, tools, siteinfo, updater;
-let topInset = 80, bottomInset = 0, updating = false;
+let topInset = 80, bottomInset = 0, updating = false, tabsReady = false;
 const certExceptions = new Set();
 const permDecisions = new Map();
 
@@ -198,10 +200,14 @@ app.whenReady().then(async () => {
     focusAddress();
   };
   trackWindowState(win, ws.file);
-  win.once('ready-to-show', () => {
+  const showWin = (why) => {
+    if (shown || win.isDestroyed()) return;
+    log('zobrazenie okna', why);
     if (ws.maximized) win.maximize();
     win.show(); shown = true; startupFocus();
-  });
+  };
+  win.once('ready-to-show', () => showWin('ready-to-show'));
+  setTimeout(() => showWin('poistka po 3 s'), 3000);     // ready-to-show niekedy nepríde (napr. po spustení inštalátorom)
   nativeTheme.on('updated', () => { if (!win.isDestroyed()) win.setTitleBarOverlay(overlayColors()); });
   settings.on('change', (k) => { if (k === 'tabsPosition' && !win.isDestroyed()) win.setTitleBarOverlay(overlayColors()); });
 
@@ -302,6 +308,9 @@ app.whenReady().then(async () => {
     if (afterUpdate) try { fs.unlinkSync(flag); } catch {}
     if (afterUpdate || settings.get('restoreSession')) tabs.restoreSession();
     tabs.create(argUrl ? tabs.resolveInput(argUrl) : undefined);
+    for (const u of pendingUrls.splice(0)) tabs.create(tabs.resolveInput(u), { background: true });
+    tabsReady = true;
+    log('karty pripravené', { afterUpdate, count: tabs.tabs.length });
     started = true;
     startupFocus();
   });
@@ -403,12 +412,18 @@ app.on('certificate-error', (event, wc, url, error, _cert, callback, isMainFrame
   if (tab && isMainFrame !== false) tabs.showCertError(tab, { url, host, error });
 });
 
+// Sova už beží a niekto ju spustil znova (ikona, odkaz z Outlooku, inštalátor po aktualizácii)
+let pendingUrls = [];
 app.on('second-instance', (_e, argv) => {
-  if (!win) return;
+  const u = urlFromArgs(argv);
+  log('second-instance', argv.slice(1), 'url:', u || '-');
+  if (!win || win.isDestroyed()) { if (u) pendingUrls.push(u); return; }
+  if (!win.isVisible()) win.show();
   if (win.isMinimized()) win.restore();
   win.focus();
-  const u = urlFromArgs(argv);
-  tabs.create(u ? tabs.resolveInput(u) : undefined);
+  if (!u) return;                              // len ikona → stačí okno ukázať, žiadna nová prázdna karta
+  if (tabsReady) tabs.create(tabs.resolveInput(u));
+  else pendingUrls.push(u);                    // karty sa ešte obnovujú – otvoríme po nich
 });
 
 app.on('window-all-closed', () => { tabs?.destroy(); app.quit(); });
