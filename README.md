@@ -55,12 +55,14 @@ Nainštalovaná verzia (Setup) si každé 4 hodiny skontroluje GitHub Releases (
 v lište sa ukáže zelené **Aktualizovať** (reštart s obnovením kariet) a inak sa nainštaluje pri najbližšom zatvorení Sovy.
 Prenosná verzia len upozorní „Nová verzia“ a otvorí stránku so stiahnutím. Stav a ručná kontrola sú v Nastaveniach.
 
-Vydanie novej verzie: zvýš `version` v `package.json`, potom
+Vydanie novej verzie (zvýši verziu, commit + push, zostaví a nahrá GitHub Release):
 
 ```
-$env:GH_TOKEN="<token>"; $env:NODE_OPTIONS="--use-system-ca"
-npm run release           # zostaví Setup + Portable a nahrá ich ako GitHub Release v<verzia>
+npm run ship -- 1.3.4 "Čo je nové"
 ```
+
+GitHub token (fine-grained, repozitár `jkbkpc/sova`, Contents: Read and write) sa pri prvom spustení vypýta
+a uloží zašifrovaný cez Windows do `%APPDATA%\Sova-dev\github-token.txt`. Nový token: pridaj `-NewToken`.
 
 ## Vývoj
 

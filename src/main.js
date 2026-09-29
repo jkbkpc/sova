@@ -243,6 +243,7 @@ app.whenReady().then(async () => {
   updater.on('before-install', () => {
     updating = true;
     tabs.saveSession();
+    if (!win.isDestroyed()) win.hide();        // okno zmizne hneď, zatváranie stránok dobehne na pozadí
     try { fs.writeFileSync(path.join(app.getPath('userData'), 'update-restart'), '1'); } catch {}
   });
   updater.start();
