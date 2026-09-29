@@ -85,3 +85,28 @@ upBtn.addEventListener('click', async () => {
 });
 api.on('update:changed', renderUpdate);
 renderUpdate();
+
+// ---------------------------------------------------------------- predvolený prehliadač
+const defBtn = document.getElementById('defbtn');
+async function renderDefault() {
+  const d = await api.invoke('default:status');
+  const st = document.getElementById('defstatus');
+  if (!d.supported) {
+    st.textContent = 'Dá sa nastaviť len v nainštalovanej verzii (nie pri spustení cez npm start).';
+    defBtn.hidden = true;
+  } else if (d.isDefault) {
+    st.textContent = 'Sova je tvoj predvolený prehliadač – odkazy z Outlooku, Teams a iných aplikácií sa otvárajú tu.';
+    defBtn.hidden = true;
+  } else {
+    st.textContent = 'Odkazy z iných aplikácií sa teraz otvárajú v inom prehliadači. Windows ťa pustí do nastavení, kde klikneš na „Nastaviť predvolené“.';
+    defBtn.hidden = false;
+  }
+}
+defBtn.addEventListener('click', async () => {
+  defBtn.disabled = true;
+  await api.invoke('default:set');
+  defBtn.disabled = false;
+});
+window.addEventListener('focus', renderDefault);            // návrat z Nastavení Windows
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderDefault(); });
+renderDefault();

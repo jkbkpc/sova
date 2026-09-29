@@ -15,6 +15,7 @@ const { Downloads } = require('./downloads');
 const { setupTools } = require('./tools-ui');
 const { setupSiteInfo } = require('./siteinfo');
 const { Updater } = require('./updater');
+const defaultBrowser = require('./defaultbrowser');
 
 // Stránky ako Google/Microsoft niekedy blokujú „Electron“ v User-Agente – odstránime ho,
 // aby sa prehliadač hlásil ako bežný Chrome.
@@ -76,8 +77,11 @@ function focusUI(channel) {
   }, 0);
 }
 
+// odkaz alebo súbor, s ktorým Windows spustil Sovu (predvolený prehliadač, dvojklik na .html)
 function urlFromArgs(argv) {
-  return argv.slice(1).find((a) => /^(https?:|file:|www\.)/i.test(a) || /\.(html?|pdf)$/i.test(a));
+  const a = argv.slice(1).find((x) => /^(https?:|file:|www\.)/i.test(x) || /\.(s?html?|xht(ml)?|pdf)$/i.test(x));
+  if (a && /^[a-z]:[\\/]|^\\\\/i.test(a)) return require('url').pathToFileURL(a).href;   // C:\… alebo \\server\…
+  return a;
 }
 
 // --------------------------------------------------------- klávesové skratky
@@ -236,6 +240,7 @@ app.whenReady().then(async () => {
     try { fs.writeFileSync(path.join(app.getPath('userData'), 'update-restart'), '1'); } catch {}
   });
   updater.start();
+  setTimeout(() => defaultBrowser.refresh().catch(() => {}), 5000);
   ipcMain.on('update:install', () => {
     const s = updater.state();
     if (s.status === 'ready') updater.install();
@@ -356,6 +361,8 @@ app.whenReady().then(async () => {
   });
   handle('settings:get', () => settings.all());
   handle('update:state', () => updater.state());
+  handle('default:status', () => defaultBrowser.status());
+  handle('default:set', () => defaultBrowser.makeDefault());
   handle('update:check', () => updater.check());
   handle('update:download', () => updater.download());
   handle('update:install', () => {

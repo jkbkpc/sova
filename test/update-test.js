@@ -52,6 +52,9 @@ app.whenReady().then(async () => {
   await u2.check();
   for (let i = 0; i < 20 && u2.state().status === 'checking'; i++) await sleep(200);
   check('bez vydania → zrozumiteľná chyba', u2.state().status === 'error', u2.state().error);
+  // predvolený prehliadač: pri npm start len vysvetlenie, bez tlačidla
+  const def = await st.executeJavaScript("document.getElementById('defstatus').textContent + '|' + document.getElementById('defbtn').hidden");
+  check('predvolený prehliadač: len v nainštalovanej verzii', /nainštalovanej/.test(def) && def.endsWith('|true'), def);
   console.log(fails ? `\n${fails} FAIL` : '\nVŠETKO OK');
   app.exit(fails ? 1 : 0);
 });
